@@ -1,7 +1,3 @@
----
-title: SJ - Search and Jump
-...
-
 - [Requirements](#requirements)
 - [Usage](#usage)
 - [Configuration](#configuration)
@@ -38,7 +34,7 @@ To do so, use a keymap ([Configuration](#configuration)) and type a pattern.
 As soon as you use the keymap and start typing the pattern :
 
 - the highights in the buffer will change ;
-- all matches will be highlighted and prefixed with a 'label' ;
+- all matches will be highlighted and prefixed with a label ;
 - the current pattern is displayed in the command line.
 
 Now you can :
@@ -52,7 +48,7 @@ Now you can :
 Notes :
 
 - There is an `auto_jump` feature which will automatically jump to a match if it is the
-  only one inthe visible area. You will not have to type `<Enter>` or `:` and a label ;
+  only one in the visible area. You will not have to type `<Enter>` or `:` and a label ;
 - If there are no matches for the current pattern, the pattern in the command line will be
   displayed in a different color.
 
@@ -102,8 +98,8 @@ vim.keymap.set("n", "s", sj.run)
 
 ## Why this plugin ?
 
-Using vertical/horizontal navigation with `<count>k/j`, `:<count><CR>`, `H/M/L/f/F/t/T/b/e/w^/$`,
-... is a very good way to navigate. But with the keyboards I use, I have to press the
+Using vertical/horizontal navigation with `<count>k/j`, `:<count><CR>`, `H/M/L/f/F/t/T/,/;b/e/w^/$`,
+is a very good way to navigate. But with the keyboards I use, I have to press the
 `<Shift>` key to type numbers and some of them are a bit to far for my fingers.
 Once on the good line, I have to repeat pressing some vertical movement keys too much.
 
@@ -114,12 +110,12 @@ match I want.
 
 For me, one small caveat of the 'jump plugins', is that they generate the labels or 'hint
 keys' based on the cursor position. That is understandable and efficient but within the
-same buffer area, it means that you can have different labels for the same pattern
-/position which make the keys sequence for a jump less predictables. Also, in some
+same buffer area, it means that you can have different labels for the same pattern/position
+which make the keys sequence for a jump less predictables. Also, in some
 contexts, you don't know if you'll have to use a 1, 2 or 3 characters for the label.
 
 By using a search pattern with a 1 character label, you can narrow the list of labels and
-you already know all the keys except the one for the label.
+you already know all the keys except one character for the label.
 
 ## Known issues
 
