@@ -129,7 +129,7 @@ local function gfind(text, pattern)
 	end
 
 	start_idx, end_idx = string.find(text, pattern, init, true)
-	while start_idx do
+	while start_idx and end_idx > 0 do
 		table.insert(ranges, { start_idx, end_idx })
 		start_idx, end_idx = string.find(text, pattern, init + end_idx, true)
 	end
