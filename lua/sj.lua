@@ -2,6 +2,7 @@ local config = {
 	auto_jump = false, -- automatically jump if there is only one match
 	use_overlay = true, -- apply an overlay to better identify labels and matches
 	separator = ":", -- separator used to extract pattern and label from the user input
+	label_as_prefix = false, -- if true, the label will be positioned before the match
 
 	-- stylua: ignore
 	labels = {
@@ -89,7 +90,7 @@ local function apply_overlay(redraw)
 end
 
 local function highlight_matches(labels_map)
-	local lnum, start_idx, end_idx
+	local lnum, start_idx, end_idx, label_pos
 
 	clear_highlights()
 	apply_overlay(false) -- redrawing here will cause flickering
@@ -97,9 +98,15 @@ local function highlight_matches(labels_map)
 	for label, match_pos in pairs(labels_map) do
 		lnum, start_idx, end_idx = unpack(match_pos)
 
+		label_pos = start_idx - 1
+		if config.label_as_prefix == true then
+			label_pos = label_pos - string.len(label)
+		end
+		label_pos = math.max(label_pos, 0)
+
 		vim.api.nvim_buf_add_highlight(0, sj_ns, "SjSearch", lnum, start_idx - 1, end_idx)
 
-		vim.api.nvim_buf_set_extmark(0, sj_ns, lnum, math.max(start_idx - 1 - string.len(label), 0), {
+		vim.api.nvim_buf_set_extmark(0, sj_ns, lnum, label_pos, {
 			virt_text = { { label, "SjLabel" } },
 			virt_text_pos = "overlay",
 		})
