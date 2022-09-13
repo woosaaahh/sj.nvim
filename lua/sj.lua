@@ -23,6 +23,17 @@ local highlights = {
 
 local sj_ns = vim.api.nvim_create_namespace("SJ")
 
+local keys = {
+	ESC = vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
+
+	BS = vim.api.nvim_replace_termcodes("<BS>", true, false, true),
+	C_H = vim.api.nvim_replace_termcodes("<C-H>", true, false, true),
+	C_U = vim.api.nvim_replace_termcodes("<C-U>", true, false, true),
+
+	CR = vim.api.nvim_replace_termcodes("<CR>", true, false, true),
+	NL = vim.api.nvim_replace_termcodes("<NL>", true, false, true),
+}
+
 --- Highlights ---------------------------------------------------------------------------------------------------------
 
 local function init_highlights()
@@ -205,19 +216,27 @@ local function get_user_input(coro)
 	coroutine.resume(coro)
 
 	while true do
-		keynum = vim.fn.getchar()
-		ok, char = pcall(string.char, keynum)
+		ok, keynum = pcall(vim.fn.getchar)
 
 		if ok then
-			if char == "\r" or char == "" then
+			if type(keynum) == "number" then
+				char = vim.fn.nr2char(keynum)
+			else
+				char = nil
+			end
+
+			if char == keys.ESC then
+				user_input = ""
+				break
+			elseif char == keys.CR or char == keys.NL then
 				break
 			end
 
-			if char == "" and #user_input > 0 then
-				user_input = string.sub(user_input, 1, #user_input - 1)
-			elseif char == "" then
+			if keynum == keys.BS or char == keys.C_H then
+				user_input = #user_input > 0 and string.sub(user_input, 1, #user_input - 1) or user_input
+			elseif char == keys.C_U then
 				user_input = ""
-			else
+			elseif char then
 				user_input = user_input .. char
 			end
 
@@ -234,7 +253,7 @@ local function get_user_input(coro)
 	end
 	clear_everything()
 
-	if char == "" then
+	if user_input == "" then
 		return
 	end
 
