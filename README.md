@@ -34,14 +34,14 @@ To do so, use a keymap ([Configuration](#configuration)) and type a pattern.
 As soon as you use the keymap and start typing the pattern :
 
 - the highights in the buffer will change ;
-- all matches will be highlighted and prefixed with a label ;
+- all matches will be highlighted and will have a label assigned to them ;
 - the current pattern is displayed in the command line.
 
 Now you can :
 
-- jump to the first match by pressing the `<Enter>` key ;
-- jump to any matches by typing `:` and the label prefixing the match ;
-- delete previous characters by pressing `<Control-h>` ;
+- jump to the first match by pressing the `<Enter>` key or `<C-j>` ;
+- jump to any matches by typing `:`, then the label assigned to the match ;
+- delete previous characters by pressing `<Backspace>` or `<Control-h>` ;
 - delete the pattern by pressing `<Control-u>` ;
 - cancel everything by pressing the `<Escape>` key.
 
@@ -61,6 +61,7 @@ local config = {
 	auto_jump = false, -- automatically jump if there is only one match
 	use_overlay = true, -- apply an overlay to better identify labels and matches
 	separator = ":", -- separator used to extract pattern and label from the user input
+	label_as_prefix = false, -- if true, the label will be positioned before the match
 
 	-- stylua: ignore
 	labels = {
@@ -83,7 +84,7 @@ sj.setup({
 	-- help to better identify labels and matches
 	use_overlay = true,
 	highlights = {
-		-- used for the label before matches
+		-- used for the labels
 		SjLabel = { bold = false },
 		-- used for everything that is not a match
 		SjOverlay = { bold = false, italic = false },
@@ -123,5 +124,6 @@ This plugin is fairly new and some things might change in the next days or weeks
 
 Right now :
 
-- I don't know how to catch the `<Backspace>` key, hence the `<Control-h>` ;
-- If a match is at the beginning of an indentend line, there is an offset of the label.
+- ~~I don't know how to catch the `<Backspace>` key, hence the `<Control-h>`~~ modified by [e18ae614](https://github.com/woosaaahh/sj.nvim/commit/e18ae6141113a12c58c7d396dc995966bb1af28f) ;
+- ~~If a match is at the beginning of an indentend line, there is an offset of the
+  label~~ modified by [90b7b99b](https://github.com/woosaaahh/sj.nvim/commit/90b7b99becb5e9fcd1e9cdd03ee4b4f8ce4851db).
