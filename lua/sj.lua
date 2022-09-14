@@ -27,6 +27,7 @@ local keys = {
 	ESC = vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
 
 	BS = vim.api.nvim_replace_termcodes("<BS>", true, false, true),
+	A_BS = vim.api.nvim_replace_termcodes("<A-BS>", true, false, true),
 	C_H = vim.api.nvim_replace_termcodes("<C-H>", true, false, true),
 	C_U = vim.api.nvim_replace_termcodes("<C-U>", true, false, true),
 
@@ -178,14 +179,15 @@ end
 
 local function search_pattern()
 	local first_line, last_line = vim.fn.line("w0"), vim.fn.line("w$")
-	local pattern, matches
+	local pattern
+	local matches = {}
 	local labels_map = {}
 
 	-- Don't wait for the user input to apply overlay
 	apply_overlay()
 
 	while true do
-		pattern = coroutine.yield()
+		pattern = coroutine.yield({ matches_count = #matches })
 		if pattern == nil then
 			break
 		end
@@ -202,7 +204,7 @@ local function search_pattern()
 	end
 
 	clear_everything()
-	return labels_map
+	return { labels_map = labels_map }
 end
 
 --- Input ---------------------------------------------
@@ -211,7 +213,9 @@ local function get_user_input(coro)
 	local keynum, ok, char
 	local user_input = ""
 	local pattern, label
+	local last_matching_pattern = ""
 	local labels_map
+	local response = {}
 
 	coroutine.resume(coro)
 
@@ -234,6 +238,8 @@ local function get_user_input(coro)
 
 			if keynum == keys.BS or char == keys.C_H then
 				user_input = #user_input > 0 and string.sub(user_input, 1, #user_input - 1) or user_input
+			elseif keynum == keys.A_BS then
+				user_input = last_matching_pattern
 			elseif char == keys.C_U then
 				user_input = ""
 			elseif char then
@@ -245,8 +251,13 @@ local function get_user_input(coro)
 				break
 			end
 
-			_, labels_map = coroutine.resume(coro, pattern)
-			if labels_map then -- #autojump
+			_, response = coroutine.resume(coro, pattern)
+			if response.matches_count and response.matches_count > 0 then
+				last_matching_pattern = pattern
+			end
+
+			if response.labels_map then -- #autojump
+				labels_map = response.labels_map
 				break
 			end
 		end
@@ -260,8 +271,8 @@ local function get_user_input(coro)
 	if labels_map then -- #autojump
 		return user_input, labels_map
 	else
-		_, labels_map = coroutine.resume(coro)
-		return user_input, labels_map
+		_, response = coroutine.resume(coro)
+		return user_input, response.labels_map
 	end
 end
 

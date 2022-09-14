@@ -50,7 +50,8 @@ Notes :
 - There is an `auto_jump` feature which will automatically jump to a match if it is the
   only one in the visible area. You will not have to type `<Enter>` or `:` and a label ;
 - If there are no matches for the current pattern, the pattern in the command line will be
-  displayed in a different color.
+  displayed in a different color. Starting from `0.2.0`, you can restore the last matching
+  pattern by pressing `<Alt-Backspace>`.
 
 ## Configuration
 
