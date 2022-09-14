@@ -47,13 +47,12 @@ pcall(init_highlights) -- user might have a reload mechanism and highlights migh
 
 local function update_highlights(user_highlights)
 	local old_hl_conf, new_hl_conf
-
 	for hl_group in pairs(highlights) do
+		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
 		if config.update_highlights == true then
-			old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
 			new_hl_conf = vim.tbl_extend("force", {}, old_hl_conf, user_highlights[hl_group] or {})
 		else
-			new_hl_conf = user_highlights[hl_group] or {}
+			new_hl_conf = user_highlights[hl_group] or old_hl_conf
 		end
 		vim.api.nvim_set_hl(0, hl_group, new_hl_conf)
 	end
