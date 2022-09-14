@@ -3,6 +3,7 @@ local config = {
 	use_overlay = true, -- apply an overlay to better identify labels and matches
 	separator = ":", -- separator used to extract pattern and label from the user input
 	label_as_prefix = false, -- if true, the label will be positioned before the match
+	update_highlights = false, -- if true, user highlights update default highlights but do not replace them
 
 	-- stylua: ignore
 	labels = {
@@ -48,8 +49,12 @@ local function update_highlights(user_highlights)
 	local old_hl_conf, new_hl_conf
 
 	for hl_group in pairs(highlights) do
-		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
-		new_hl_conf = vim.tbl_extend("force", {}, old_hl_conf, user_highlights[hl_group] or {})
+		if config.update_highlights == true then
+			old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
+			new_hl_conf = vim.tbl_extend("force", {}, old_hl_conf, user_highlights[hl_group] or {})
+		else
+			new_hl_conf = user_highlights[hl_group] or {}
+		end
 		vim.api.nvim_set_hl(0, hl_group, new_hl_conf)
 	end
 end
