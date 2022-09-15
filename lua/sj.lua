@@ -348,7 +348,7 @@ end
 local M = {}
 
 function M.run(opts)
-	opts = vim.tbl_extend("force", {}, config, opts)
+	opts = vim.tbl_extend("force", {}, config, opts or {})
 	local coro = coroutine.create(search_pattern)
 	local user_input, labels_map = get_user_input(coro, opts)
 	jump_to_match(user_input, labels_map)
