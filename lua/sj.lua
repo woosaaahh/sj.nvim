@@ -118,7 +118,7 @@ local function highlight_matches(labels_map, pattern)
 	apply_overlay(false) -- redrawing here will cause flickering
 
 	local highlight = "SjLabel"
-	if type(cache.max_pattern_length) == "number" and #pattern >= cache.max_pattern_length then
+	if cache.max_pattern_length > 0 and #pattern >= cache.max_pattern_length then
 		highlight = "SjLimit"
 	end
 
@@ -146,7 +146,7 @@ local function echo_pattern(pattern, matches)
 	local highlight = ""
 	if #matches < 1 then
 		highlight = "SjWarning"
-	elseif type(cache.max_pattern_length) == "number" and #pattern >= cache.max_pattern_length then
+	elseif cache.max_pattern_length > 0 and #pattern >= cache.max_pattern_length then
 		highlight = "SjLimit"
 	end
 	vim.api.nvim_echo({ { pattern, highlight } }, false, {})
