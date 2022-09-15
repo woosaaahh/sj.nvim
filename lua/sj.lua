@@ -36,6 +36,9 @@ local keys = {
 	NL = vim.api.nvim_replace_termcodes("<NL>", true, false, true),
 }
 
+local cache = {
+	max_pattern_length = 0,
+}
 --- Highlights ---------------------------------------------------------------------------------------------------------
 
 local function init_highlights()
@@ -181,7 +184,7 @@ local function find_matches(pattern, first_line, last_line)
 	return matches
 end
 
-local function search_pattern()
+local function search_pattern(opts)
 	local first_line, last_line = vim.fn.line("w0"), vim.fn.line("w$")
 	local pattern
 	local matches = {}
@@ -197,7 +200,7 @@ local function search_pattern()
 		end
 
 		matches = find_matches(pattern, first_line, last_line)
-		if config.auto_jump and #matches == 1 then
+		if opts.auto_jump and #matches == 1 then
 			labels_map = { [config.labels[1]] = matches[1] }
 			break
 		end
@@ -213,15 +216,25 @@ end
 
 --- Input ---------------------------------------------
 
-local function get_user_input(coro)
+local function get_user_input(coro, opts)
 	local keynum, ok, char
 	local user_input = ""
-	local pattern, label
+	local pattern = ""
+	local label
 	local last_matching_pattern = ""
 	local labels_map
 	local response = {}
+	local max_pattern_length = opts.max_pattern_length
 
-	coroutine.resume(coro)
+	coroutine.resume(coro, opts)
+
+
+	if type(max_pattern_length) == "number" and max_pattern_length >= 0 then
+		cache.max_pattern_length = max_pattern_length
+	else
+		max_pattern_length = 0
+		cache.max_pattern_length = 0
+	end
 
 	while true do
 		ok, keynum = pcall(vim.fn.getchar)
@@ -252,6 +265,12 @@ local function get_user_input(coro)
 
 			pattern, label = unpack(extract_pattern_and_label(user_input))
 			if #label > 0 then
+				break
+			end
+
+			if max_pattern_length > 0 and #pattern > max_pattern_length then
+				pattern = string.sub(user_input, 1, #user_input - 1)
+				user_input = pattern .. config.separator .. char
 				break
 			end
 
@@ -306,9 +325,10 @@ end
 
 local M = {}
 
-function M.run()
+function M.run(opts)
+	opts = vim.tbl_extend("force", {}, config, opts)
 	local coro = coroutine.create(search_pattern)
-	local user_input, labels_map = get_user_input(coro)
+	local user_input, labels_map = get_user_input(coro, opts)
 	jump_to_match(user_input, labels_map)
 end
 
