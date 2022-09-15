@@ -37,8 +37,10 @@ local keys = {
 }
 
 local cache = {
+	last_used_pattern = "",
 	max_pattern_length = 0,
 }
+
 --- Highlights ---------------------------------------------------------------------------------------------------------
 
 local function init_highlights()
@@ -228,6 +230,10 @@ local function get_user_input(coro, opts)
 
 	coroutine.resume(coro, opts)
 
+	if opts.use_last_pattern == true and type(cache.last_used_pattern) == "string" then
+		user_input = cache.last_used_pattern
+		coroutine.resume(coro, user_input)
+	end
 
 	if type(max_pattern_length) == "number" and max_pattern_length >= 0 then
 		cache.max_pattern_length = max_pattern_length
@@ -286,6 +292,10 @@ local function get_user_input(coro, opts)
 		end
 	end
 	clear_everything()
+
+	if type(pattern) == "string" then
+		cache.last_used_pattern = pattern
+	end
 
 	if user_input == "" then
 		return
