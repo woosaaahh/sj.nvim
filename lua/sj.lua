@@ -261,7 +261,7 @@ local function get_user_input(coro, opts)
 			if type(keynum) == "number" then
 				char = vim.fn.nr2char(keynum)
 			else
-				char = nil
+				char = ""
 			end
 
 			if char == keys.ESC then
@@ -277,7 +277,7 @@ local function get_user_input(coro, opts)
 				user_input = last_matching_pattern
 			elseif char == keys.C_U then
 				user_input = ""
-			elseif char then
+			elseif type(char) == "string" and #char > 0 then
 				user_input = user_input .. char
 			end
 
