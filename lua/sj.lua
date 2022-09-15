@@ -20,6 +20,7 @@ local highlights = {
 	SjOverlay = "Comment",
 	SjSearch = "IncSearch",
 	SjWarning = "WarningMsg",
+	SjLimit = "ErrorMsg",
 }
 
 local sj_ns = vim.api.nvim_create_namespace("SJ")
@@ -110,11 +111,16 @@ local function apply_overlay(redraw)
 	end
 end
 
-local function highlight_matches(labels_map)
+local function highlight_matches(labels_map, pattern)
 	local lnum, start_idx, end_idx, label_pos
 
 	clear_highlights()
 	apply_overlay(false) -- redrawing here will cause flickering
+
+	local highlight = "SjLabel"
+	if type(cache.max_pattern_length) == "number" and #pattern >= cache.max_pattern_length then
+		highlight = "SjLimit"
+	end
 
 	for label, match_pos in pairs(labels_map) do
 		lnum, start_idx, end_idx = unpack(match_pos)
@@ -128,7 +134,7 @@ local function highlight_matches(labels_map)
 		vim.api.nvim_buf_add_highlight(0, sj_ns, "SjSearch", lnum, start_idx - 1, end_idx)
 
 		vim.api.nvim_buf_set_extmark(0, sj_ns, lnum, label_pos, {
-			virt_text = { { label, "SjLabel" } },
+			virt_text = { { label, highlight } },
 			virt_text_pos = "overlay",
 		})
 	end
@@ -137,7 +143,13 @@ local function highlight_matches(labels_map)
 end
 
 local function echo_pattern(pattern, matches)
-	vim.api.nvim_echo({ { pattern, #matches > 0 and "" or "SjWarning" } }, false, {})
+	local highlight = ""
+	if #matches < 1 then
+		highlight = "SjWarning"
+	elseif type(cache.max_pattern_length) == "number" and #pattern >= cache.max_pattern_length then
+		highlight = "SjLimit"
+	end
+	vim.api.nvim_echo({ { pattern, highlight } }, false, {})
 end
 
 local function clear_everything()
@@ -208,7 +220,7 @@ local function search_pattern(opts)
 		end
 
 		labels_map = create_labels_map(matches)
-		highlight_matches(labels_map)
+		highlight_matches(labels_map, pattern)
 		echo_pattern(pattern, matches)
 	end
 
