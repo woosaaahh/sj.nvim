@@ -390,7 +390,7 @@ function M.run(opts)
 end
 
 function M.setup(user_config)
-	config = vim.tbl_deep_extend("force", {}, config, user_config)
+	config = vim.tbl_deep_extend("force", {}, config, user_config or {})
 	update_highlights(config.highlights)
 	manage_highlights_autocmd(config.use_highlights_autocmd, config.highlights)
 end
