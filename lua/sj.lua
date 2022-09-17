@@ -55,6 +55,11 @@ pcall(init_highlights) -- user might have a reload mechanism and highlights migh
 
 local function update_highlights(user_highlights)
 	local old_hl_conf, new_hl_conf
+
+	if type(user_highlights) ~= "table" or next(user_highlights) == nil then
+		user_highlights = {}
+	end
+
 	for hl_group, hl_target in pairs(highlights) do
 		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
 
@@ -386,10 +391,8 @@ end
 
 function M.setup(user_config)
 	config = vim.tbl_deep_extend("force", {}, config, user_config)
-	if config.highlights then
-		update_highlights(config.highlights)
-		manage_highlights_autocmd(config.use_highlights_autocmd, config.highlights)
-	end
+	update_highlights(config.highlights)
+	manage_highlights_autocmd(config.use_highlights_autocmd, config.highlights)
 end
 
 return M
