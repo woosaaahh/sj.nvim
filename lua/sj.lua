@@ -4,6 +4,7 @@ local config = {
 	separator = ":", -- separator used to extract pattern and label from the user input
 	label_as_prefix = false, -- if true, the label will be positioned before the match
 	update_highlights = false, -- if true, user highlights update default highlights but do not replace them
+	use_highlights_autocmd = true, -- if true, an autocmd will be created to ensure highlights are preserved
 
 	-- stylua: ignore
 	labels = {
@@ -23,6 +24,7 @@ local highlights = {
 	SjLimit = "ErrorMsg",
 }
 
+local sj_augroup = vim.api.nvim_create_augroup("SJ", { clear = true })
 local sj_ns = vim.api.nvim_create_namespace("SJ")
 
 local keys = {
@@ -53,8 +55,19 @@ pcall(init_highlights) -- user might have a reload mechanism and highlights migh
 
 local function update_highlights(user_highlights)
 	local old_hl_conf, new_hl_conf
-	for hl_group in pairs(highlights) do
+	for hl_group, hl_target in pairs(highlights) do
 		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
+
+		--- When a highlight group has been cleared, the result of `vim.api.nvim_get_hl_by_name()` is `{ [true] = 6 }`.
+		--- I find it weird and would expect an empty table or `nil`. I'm missing something or it's a bug.
+		old_hl_conf[true] = nil
+
+		-- The highlight target group might have been cleared and the link not restored,
+		-- so we "restore" the configuration by using the one from the target group.
+		if #old_hl_conf == 0 then
+			old_hl_conf = vim.api.nvim_get_hl_by_name(hl_target, true)
+		end
+
 		if config.update_highlights == true then
 			new_hl_conf = vim.tbl_extend("force", {}, old_hl_conf, user_highlights[hl_group] or {})
 		else
@@ -66,6 +79,23 @@ end
 
 local function clear_highlights()
 	vim.api.nvim_buf_clear_namespace(0, sj_ns, 0, -1)
+end
+
+local function manage_highlights_autocmd(create_command, user_highlights)
+	if create_command == true then
+		vim.api.nvim_create_autocmd("ColorScheme", {
+			group = sj_augroup,
+			pattern = "*",
+			desc = "Preserve highlights",
+			callback = function()
+				update_highlights(user_highlights)
+			end,
+		})
+	else
+		--- The user might have a reload mechanism or the configuration has changed,
+		--- so we have to make sure the autocmd is cleared.
+		vim.api.nvim_clear_autocmds({ group = sj_augroup })
+	end
 end
 
 --- Core ---------------------------------------------------------------------------------------------------------------
@@ -358,6 +388,7 @@ function M.setup(user_config)
 	config = vim.tbl_deep_extend("force", {}, config, user_config)
 	if config.highlights then
 		update_highlights(config.highlights)
+		manage_highlights_autocmd(config.use_highlights_autocmd, config.highlights)
 	end
 end
 
