@@ -8,7 +8,7 @@
 
 Search based navigation combined with quick jump features.
 
-![screenshot](./screenshot.png)
+![screenshot](https://user-images.githubusercontent.com/111681540/191117428-1b169063-9e81-426f-a6d8-441aef287f99.png)
 
 ## Requirements
 
