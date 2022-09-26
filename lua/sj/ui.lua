@@ -18,7 +18,7 @@ local M = {}
 
 local function init_highlights()
 	for hl_group, hl_target in pairs(hl_group_links) do
-		vim.api.nvim_set_hl(0, hl_group, { link = hl_target, default = true })
+		vim.api.nvim_set_hl(cache.state.bufnr or 0, hl_group, { link = hl_target, default = true })
 	end
 end
 init_highlights()
@@ -33,12 +33,12 @@ local function replace_highlights(new_highlights)
 	for hl_group in pairs(hl_group_links) do
 		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
 		new_hl_conf = new_highlights[hl_group] or old_hl_conf
-		vim.api.nvim_set_hl(0, hl_group, new_hl_conf)
+		vim.api.nvim_set_hl(cache.state.bufnr or 0, hl_group, new_hl_conf)
 	end
 end
 
 local function clear_highlights()
-	vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
+	vim.api.nvim_buf_clear_namespace(cache.state.bufnr or 0, namespace, 0, -1)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ local function apply_overlay(redraw)
 	end
 
 	for lnum = 0, vim.fn.line("$") - 1 do
-		vim.api.nvim_buf_add_highlight(0, namespace, "SjOverlay", lnum, 0, -1)
+		vim.api.nvim_buf_add_highlight(cache.state.bufnr or 0, namespace, "SjOverlay", lnum, 0, -1)
 	end
 
 	if redraw ~= false then
@@ -81,9 +81,9 @@ local function highlight_matches(labels_map, pattern)
 			label_highlight = last_label_highlight
 		end
 
-		vim.api.nvim_buf_add_highlight(0, namespace, "SjMatches", lnum, start_idx - 1, end_idx)
+		vim.api.nvim_buf_add_highlight(cache.state.bufnr or 0, namespace, "SjMatches", lnum, start_idx - 1, end_idx)
 
-		vim.api.nvim_buf_set_extmark(0, namespace, lnum, label_pos, {
+		vim.api.nvim_buf_set_extmark(cache.state.bufnr or 0, namespace, lnum, label_pos, {
 			virt_text = { { label, label_highlight } },
 			virt_text_pos = "overlay",
 		})
@@ -120,6 +120,7 @@ function M.manage_highlights(new_highlights, preserve_highlights)
 end
 
 function M.show_feedbacks(pattern, matches, labels_map)
+	cache.state.bufnr = vim.api.nvim_get_current_buf()
 	apply_overlay()
 	highlight_matches(labels_map, pattern)
 	echo_pattern(pattern, matches)
