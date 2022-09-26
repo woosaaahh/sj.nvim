@@ -16,9 +16,33 @@ local keys = {
 
 	A_COMMA = vim.api.nvim_replace_termcodes("<A-,>", true, false, true),
 	A_SEMICOLON = vim.api.nvim_replace_termcodes("<A-;>", true, false, true),
+
+	A_Q = vim.api.nvim_replace_termcodes("<A-q>", true, false, true),
+	C_Q = vim.api.nvim_replace_termcodes("<C-q>", true, false, true),
 }
 
 ------------------------------------------------------------------------------------------------------------------------
+
+local function send_to_qflist(matches)
+	if type(matches) ~= "table" then
+		return
+	end
+
+	local lnum, start_idx, end_idx, line
+	local qf_list = {}
+	for match_num, match_range in ipairs(matches) do
+		lnum, start_idx, end_idx = unpack(match_range)
+		line = vim.fn.getline(lnum + 1)
+		qf_list[match_num] = {
+			text = line,
+			bufnr = vim.api.nvim_get_current_buf(),
+			lnum = lnum + 1,
+			col = start_idx,
+			end_col = end_idx,
+		}
+	end
+	vim.fn.setqflist(qf_list)
+end
 
 local function create_labels_map(labels, matches, reverse)
 	local label
@@ -251,6 +275,9 @@ function M.get_user_input()
 				cache.state.label_index = cache.state.label_index - 1
 			elseif keynum == keys.A_SEMICOLON then
 				cache.state.label_index = cache.state.label_index + 1
+			elseif keynum == keys.A_Q or char == keys.C_Q then
+				send_to_qflist(matches)
+				break
 			elseif cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
 				user_input = user_input .. cache.options.separator .. char
 			else
@@ -288,7 +315,7 @@ function M.get_user_input()
 		return
 	end
 
-	if char == keys.CR or char == keys.NL then
+	if char == keys.CR or char == keys.NL or keynum == keys.A_Q or char == keys.C_Q then
 		return
 	end
 

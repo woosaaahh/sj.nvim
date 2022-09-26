@@ -46,6 +46,7 @@ Now you can :
 - delete the pattern by pressing `<Control-u>` ;
 - restore last matching pattern by pressing `<Alt-Backspace>` ;
 - jump to previous or next match while searching by pressing `<Alt-,>` or `<Alt-;>` ;
+- send search results to the `qflist` by pressing `<Alt-q>` or `<Control-q>` ;
 - cancel everything by pressing the `<Escape>` key.
 
 Notes :
