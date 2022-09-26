@@ -71,6 +71,7 @@ local config = {
 	preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
 	search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
 	separator = ":", -- character used to split the user input in <pattern> and <label>
+	update_search_register = false, -- if true, update the search register with the last used pattern
 	use_last_pattern = false, -- if true, reuse the last pattern for next calls
 	use_overlay = true, -- if true, apply an overlay to better identify labels and matches
 	wrap_jumps = vim.o.wrapscan, -- if true, wrap the jumps when focusing previous or next label
@@ -123,7 +124,10 @@ vim.keymap.set("n", "s", function()
 end)
 
 vim.keymap.set("n", "gs", function()
-	sj.run({ search_scope = "buffer" })
+	sj.run({ 
+		search_scope = "buffer", 
+		update_search_register = true,
+    })
 end)
 
 vim.keymap.set({ "n", "o", "v" }, "<localleader>c", function()

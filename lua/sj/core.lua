@@ -23,6 +23,18 @@ local keys = {
 
 ------------------------------------------------------------------------------------------------------------------------
 
+local function update_search_register(pattern, pattern_type)
+	if type(pattern) ~= "string" or #pattern == 0 then
+		return
+	end
+
+	if pattern_type == "vim_very_magic" then
+		pattern = "\\v" .. pattern
+	end
+
+	vim.fn.setreg("/", pattern)
+end
+
 local function send_to_qflist(matches)
 	if type(matches) ~= "table" then
 		return
@@ -308,7 +320,12 @@ function M.get_user_input()
 		---
 	end
 	ui.clear_feedbacks()
+
 	cache.state.last_used_pattern = pattern
+
+	if cache.options.update_search_register == true then
+		update_search_register(cache.state.last_used_pattern, cache.options.pattern_type)
+	end
 
 	if char == keys.ESC then
 		M.jump_to({ cursor_pos[1] - 1, cursor_pos[2] + 1 })
