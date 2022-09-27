@@ -107,7 +107,7 @@ function M.filter_options(opts)
 		end
 
 		if opts[key] ~= nil and filtered[key] == nil then
-			table.insert(warnings, ("Config : '%s' " .. o.message):format(key))
+			table.insert(warnings, ("'%s' option " .. o.message):format(key))
 		end
 	end
 
@@ -118,7 +118,7 @@ function M.filter_options(opts)
 			end
 			filtered[key] = nil
 
-			table.insert(warnings, ("Config : '%s' " .. o.message):format(key, o.alternative))
+			table.insert(warnings, ("'%s' option " .. o.message):format(key, o.alternative))
 		end
 	end
 
