@@ -1,3 +1,6 @@
+local warn_title = "SJ.nvim"
+local warn_prefix = ("[%s] "):format(warn_title)
+
 local M = {}
 
 function M.tbl_map(tbl, func)
@@ -20,10 +23,18 @@ end
 
 function M.warn(message)
 	local message_type = type(message)
-	local prefix = "[SJ] "
+	local prefix = type(vim.notify) == "table" and "" or warn_prefix
 
 	if message_type ~= "string" and message_type ~= "table" then
-		return vim.notify(prefix .. "'message' for warnings must be a string or a table", vim.log.levels.WARN)
+		return vim.notify(
+			prefix .. "'message' for warnings must be a string or a table",
+			vim.log.levels.WARN,
+			{ title = warn_title }
+		)
+	end
+
+	if #message == 0 then
+		return
 	end
 
 	if type(message) == "table" then
@@ -35,7 +46,7 @@ function M.warn(message)
 		message = string_add_prefix(message, prefix)
 	end
 
-	vim.notify(message, vim.log.levels.WARN)
+	vim.notify(message, vim.log.levels.WARN, { title = warn_title })
 end
 
 return M
