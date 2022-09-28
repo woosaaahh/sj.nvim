@@ -41,4 +41,37 @@ function M.redo(opts)
 	core.extract_range_and_jump_to(user_input, labels_map)
 end
 
+function M.prev_match()
+	local forward_search_bak = cache.options.forward_search
+	cache.options.forward_search = not cache.options.forward_search
+
+	M.next_match()
+
+	cache.options.forward_search = forward_search_bak
+end
+
+function M.next_match()
+	if cache.defaults == nil or next(cache.defaults) == nil then
+		return utils.warn("You need to call require('sj').setup() at least once.")
+	end
+
+	local pattern = cache.state.last_used_pattern or ""
+	if type(pattern) ~= "string" or #pattern == 0 then
+		return
+	end
+
+	local relative_labels = cache.options.relative_labels
+	cache.options.relative_labels = true
+
+	cache.state.cursor_pos = vim.api.nvim_win_get_cursor(0)
+
+	local matches, labels_map = core.search_pattern(pattern)
+
+	ui.cancel_highlights_timer()
+	ui.show_feedbacks(pattern, matches, labels_map)
+	core.focus_label(1, matches)
+
+	cache.options.relative_labels = relative_labels
+end
+
 return M

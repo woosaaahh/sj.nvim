@@ -1,5 +1,6 @@
 local cache = require("sj.cache")
 
+local clear_timer
 local augroup = vim.api.nvim_create_augroup("SJ", { clear = true })
 local namespace = vim.api.nvim_create_namespace("SJ")
 
@@ -117,6 +118,17 @@ function M.manage_highlights(new_highlights, preserve_highlights)
 	else
 		vim.api.nvim_clear_autocmds({ group = augroup, event = "ColorScheme" })
 	end
+
+	vim.api.nvim_create_autocmd("CursorHold", {
+		group = augroup,
+		pattern = "*",
+		desc = "Clear highlights when the cursor move",
+		callback = function()
+			if cache.options.highlights_timeout > 0 then
+				clear_timer = vim.defer_fn(clear_highlights, cache.options.highlights_timeout)
+			end
+		end,
+	})
 end
 
 function M.show_feedbacks(pattern, matches, labels_map)
@@ -129,6 +141,13 @@ end
 function M.clear_feedbacks()
 	clear_highlights()
 	echo_pattern("", {})
+end
+
+function M.cancel_highlights_timer()
+	if clear_timer ~= nil then
+		pcall(vim.loop.timer_stop, clear_timer)
+		pcall(vim.loop.timer_close, clear_timer)
+	end
 end
 
 return M

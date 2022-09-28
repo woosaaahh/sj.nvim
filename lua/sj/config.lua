@@ -46,6 +46,7 @@ local checks = {
 	auto_jump = { func = is_boolean, message = "must be a boolean" },
 	forward_search = { func = is_boolean, message = "must be a boolean" },
 	highlights = { func = valid_highlights, message = "must be a table with tables as values" },
+	highlights_timeout = { func = is_unsigned_number, message = "must be an unsigned number" },
 	labels = { func = valid_labels, message = "must be a list of characters" },
 	max_pattern_length = { func = is_unsigned_number, message = "must be an unsigned number" },
 	pattern_type = { func = is_string, message = "must be a string" },
@@ -77,6 +78,7 @@ local M = {
 	defaults = {
 		auto_jump = false, -- if true, automatically jump on the sole match
 		forward_search = true, -- if true, search will be done from top to bottom
+		highlights_timeout = 1, -- if > 0, wait for 'timeoutlen' + N ms to clear hightlights (sj.prev_match/sj.next_match)
 		max_pattern_length = 0, -- if > 0, wait for a label after N characters
 		pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 		preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme

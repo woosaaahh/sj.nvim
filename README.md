@@ -56,6 +56,9 @@ Notes :
 - If there are no matches for the current pattern, the pattern in the command line will be
   displayed in a different color ;
 - When you use `max_pattern_length` and you reach that length limit, the labels color will change to indicate that next key should be for the label and not for the pattern.
+- After a search, you can jump to the previous or the next match by using
+  `require("sj").prev_match()` and `require("sj").next_match()`. Note that the jumps will
+  be relative to the cursor position.
 	
 **DISCLAIMER** : This plugin is not intended to replace the native functions of Neovim. I do not recommend adding keymaps that replaces `/, ?, f/F, t/T...`.
 
@@ -67,6 +70,7 @@ Here is the default configuration :
 local config = {
 	auto_jump = false, -- if true, automatically jump on the sole match
 	forward_search = true, -- if true, search will be done from top to bottom
+	highlights_timeout = 1, -- if > 0, wait for 'timeoutlen' + N ms to clear hightlights (sj.prev_match/sj.next_match)
 	max_pattern_length = 0, -- if > 0, wait for a label after N characters
 	pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 	preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
@@ -131,6 +135,9 @@ vim.keymap.set("n", "S", function()
 		wrap_jumps = true,
 	})
 end)
+
+vim.keymap.set("n", "<A-,>", sj.prev_match)
+vim.keymap.set("n", "<A-;>", sj.next_match)
 
 vim.keymap.set("n", "gs", function()
 	sj.run({ 
