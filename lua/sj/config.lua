@@ -44,11 +44,13 @@ end
 
 local checks = {
 	auto_jump = { func = is_boolean, message = "must be a boolean" },
+	forward_search = { func = is_boolean, message = "must be a boolean" },
 	highlights = { func = valid_highlights, message = "must be a table with tables as values" },
 	labels = { func = valid_labels, message = "must be a list of characters" },
 	max_pattern_length = { func = is_unsigned_number, message = "must be an unsigned number" },
 	pattern_type = { func = is_string, message = "must be a string" },
 	preserve_highlights = { func = is_boolean, message = "must be a boolean" },
+	relative_labels = { func = is_boolean, message = "must be a boolean" },
 	search_scope = { func = is_string, message = "must be a string" },
 	separator = { func = is_char, message = "must be a character" },
 	update_search_register = { func = is_boolean, message = "must be a boolean" },
@@ -74,9 +76,11 @@ local deprecated = {
 local M = {
 	defaults = {
 		auto_jump = false, -- if true, automatically jump on the sole match
+		forward_search = true, -- if true, search will be done from top to bottom
 		max_pattern_length = 0, -- if > 0, wait for a label after N characters
 		pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 		preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
+		relative_labels = false, -- if true, labels are ordered from cursor position, not from the top of the buffer
 		search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines)
 		separator = ":", -- character used to split the user input in <pattern> and <label>
 		update_search_register = false, -- if true, update the search register with the last used pattern

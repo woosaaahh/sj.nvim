@@ -1,5 +1,6 @@
 local cache = require("sj.cache")
 local ui = require("sj.ui")
+local utils = require("sj.utils")
 
 local keys = {
 	ESC = vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
@@ -137,6 +138,14 @@ local function find_matches(pattern, first_line, last_line)
 		pattern = pattern:lower()
 	end
 
+	local cursor_lnum, cursor_col = cache.state.cursor_pos[1], cache.state.cursor_pos[2] + 1
+
+	local forward = cache.options.forward_search == true
+	local relative = cache.options.relative_labels == true
+
+	local match_lnum, match_col, match_end_col
+	local prev_matches, next_matches = {}, {}
+
 	for i, line in ipairs(lines) do
 		if #matches > #cache.options.labels then
 			break
@@ -144,11 +153,42 @@ local function find_matches(pattern, first_line, last_line)
 
 		--- skip errors due to % at the end (lua), unbalanced (), ...
 		local ok, ranges = pcall(pattern_ranges, line, pattern, search)
+
 		if ok then
 			for _, match_range in ipairs(ranges) do
-				table.insert(matches, { first_line + i - 2, unpack(match_range) })
+				match_lnum, match_col, match_end_col = first_line - 1 + i, unpack(match_range)
+				match_range = { match_lnum - 1, match_col, match_end_col }
+
+				--- prev matches
+				if match_lnum < cursor_lnum then
+					table.insert(prev_matches, match_range)
+				elseif match_lnum == cursor_lnum and forward == false and match_col < cursor_col then
+					table.insert(prev_matches, match_range)
+				elseif match_lnum == cursor_lnum and forward == true and match_col <= cursor_col then
+					table.insert(prev_matches, match_range)
+
+				--- next matches
+				elseif match_lnum == cursor_lnum and forward == false and match_col >= cursor_col then
+					table.insert(next_matches, match_range)
+				elseif match_lnum == cursor_lnum and forward == true and match_col > cursor_col then
+					table.insert(next_matches, match_range)
+				elseif match_lnum > cursor_lnum then
+					table.insert(next_matches, match_range)
+				end
+
+				---
 			end
 		end
+	end
+
+	if relative == false and forward == false then
+		matches = utils.list_reverse(utils.list_extend(prev_matches, next_matches))
+	elseif relative == false and forward == true then
+		matches = utils.list_extend(prev_matches, next_matches)
+	elseif relative == true and forward == false then
+		matches = utils.list_extend(utils.list_reverse(prev_matches), utils.list_reverse(next_matches))
+	elseif relative == true and forward == true then
+		matches = utils.list_extend(next_matches, prev_matches)
 	end
 
 	return matches
@@ -248,6 +288,7 @@ function M.get_user_input()
 	local matches, labels_map = {}, {}
 	local need_looping = true
 	local cursor_pos = vim.api.nvim_win_get_cursor(0)
+	cache.state.cursor_pos = cursor_pos
 
 	cache.state.label_index = 1
 

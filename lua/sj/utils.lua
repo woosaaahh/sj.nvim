@@ -49,4 +49,24 @@ function M.warn(message)
 	vim.notify(message, vim.log.levels.WARN, { title = warn_title })
 end
 
+function M.list_extend(base, extras)
+	local extended_list = vim.deepcopy(base)
+
+	for _, element in ipairs(extras) do
+		table.insert(extended_list, element)
+	end
+
+	return extended_list
+end
+
+function M.list_reverse(list)
+	local reversed_list = {}
+
+	for i = 1, #list do
+		table.insert(reversed_list, list[#list + 1 - i])
+	end
+
+	return reversed_list
+end
+
 return M

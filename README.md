@@ -66,9 +66,11 @@ Here is the default configuration :
 ```lua
 local config = {
 	auto_jump = false, -- if true, automatically jump on the sole match
+	forward_search = true, -- if true, search will be done from top to bottom
 	max_pattern_length = 0, -- if > 0, wait for a label after N characters
 	pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 	preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
+	relative_labels = false, -- if true, labels are ordered from cursor position, not from the top of the buffer
 	search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
 	separator = ":", -- character used to split the user input in <pattern> and <label>
 	update_search_register = false, -- if true, update the search register with the last used pattern
@@ -121,6 +123,13 @@ sj.setup({
 
 vim.keymap.set("n", "s", function()
 	sj.run({ wrap_jumps = true })
+end)
+
+vim.keymap.set("n", "S", function()
+	sj.run({
+		forward_search = false,
+		wrap_jumps = true,
+	})
 end)
 
 vim.keymap.set("n", "gs", function()
