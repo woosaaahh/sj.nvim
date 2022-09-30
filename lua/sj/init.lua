@@ -65,7 +65,7 @@ function M.next_match()
 
 	cache.state.cursor_pos = vim.api.nvim_win_get_cursor(0)
 
-	local matches, labels_map = core.search_pattern(pattern)
+	local matches, labels_map = core.search_pattern(pattern, cache.state.first_line, cache.state.last_line)
 
 	ui.cancel_highlights_timer()
 	ui.show_feedbacks(pattern, matches, labels_map)

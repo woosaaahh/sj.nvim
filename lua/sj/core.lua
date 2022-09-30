@@ -194,22 +194,6 @@ local function find_matches(pattern, first_line, last_line)
 	return matches
 end
 
-local function get_lines(search_scope)
-	local cursor_line = vim.fn.line(".")
-	local first_visible_line, last_visible_line = vim.fn.line("w0"), vim.fn.line("w$")
-	local first_buffer_line, last_buffer_line = 1, vim.fn.line("$")
-
-	local cases = {
-		current_line = { cursor_line, cursor_line },
-		visible_lines_above = { first_visible_line, cursor_line - 1 },
-		visible_lines_below = { cursor_line + 1, last_visible_line },
-		visible_lines = { first_visible_line, last_visible_line },
-		buffer = { first_buffer_line, last_buffer_line },
-	}
-
-	return unpack(cases[search_scope] or cases["visible_lines"])
-end
-
 local function extract_pattern_and_label(user_input, separator)
 	if type(separator) ~= "string" then
 		separator = ":"
@@ -274,11 +258,26 @@ function M.focus_label(label_index, matches)
 	M.jump_to(match_range)
 end
 
-function M.search_pattern(pattern)
-	local first_line, last_line = get_lines(cache.options.search_scope)
+function M.search_pattern(pattern, first_line, last_line)
 	local matches = find_matches(pattern, first_line, last_line)
 	local labels_map = create_labels_map(cache.options.labels, matches, false)
 	return matches, labels_map
+end
+
+function M.get_lines(search_scope)
+	local cursor_line = vim.fn.line(".")
+	local first_visible_line, last_visible_line = vim.fn.line("w0"), vim.fn.line("w$")
+	local first_buffer_line, last_buffer_line = 1, vim.fn.line("$")
+
+	local cases = {
+		current_line = { cursor_line, cursor_line },
+		visible_lines_above = { first_visible_line, cursor_line - 1 },
+		visible_lines_below = { cursor_line + 1, last_visible_line },
+		visible_lines = { first_visible_line, last_visible_line },
+		buffer = { first_buffer_line, last_buffer_line },
+	}
+
+	return unpack(cases[search_scope] or cases["visible_lines"])
 end
 
 function M.get_user_input()
@@ -287,7 +286,10 @@ function M.get_user_input()
 	local pattern, label, last_matching_pattern = "", "", ""
 	local matches, labels_map = {}, {}
 	local need_looping = true
+	local first_line, last_line = M.get_lines(cache.options.search_scope)
 	local cursor_pos = vim.api.nvim_win_get_cursor(0)
+
+	cache.state.first_line, cache.state.last_line = first_line, last_line
 	cache.state.cursor_pos = cursor_pos
 
 	cache.state.label_index = 1
@@ -295,7 +297,7 @@ function M.get_user_input()
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
 		user_input = cache.state.last_used_pattern
 		pattern = cache.state.last_used_pattern
-		matches, labels_map = M.search_pattern(user_input)
+		matches, labels_map = M.search_pattern(user_input, first_line, last_line)
 		M.focus_label(cache.state.label_index, matches)
 	end
 
@@ -342,7 +344,7 @@ function M.get_user_input()
 
 		pattern, label = extract_pattern_and_label(user_input, cache.options.separator)
 
-		matches, labels_map = M.search_pattern(pattern)
+		matches, labels_map = M.search_pattern(pattern, first_line, last_line)
 		M.focus_label(cache.state.label_index, matches)
 		ui.show_feedbacks(pattern, matches, labels_map)
 
