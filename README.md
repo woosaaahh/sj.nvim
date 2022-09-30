@@ -114,7 +114,7 @@ local colors = {
 local sj = require("sj")
 sj.setup({
 	pattern_type = "vim_very_magic",
-    prompt_prefix = "Pattern ? ",
+	prompt_prefix = "Pattern ? ",
 	search_scope = "visible_lines",
 
 	highlights = {
