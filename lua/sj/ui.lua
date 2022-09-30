@@ -95,10 +95,18 @@ end
 
 local function echo_pattern(pattern, matches)
 	local highlight = ""
-	if type(matches) == "table" and #matches < 1 then
+	if pattern ~= nil and #pattern > 0 and type(matches) == "table" and #matches < 1 then
 		highlight = "SjNoMatches"
 	end
+
+	if pattern ~= nil and type(cache.options.prompt_prefix) == "string" then
+		pattern = cache.options.prompt_prefix .. pattern
+	else
+		pattern = ""
+	end
+
 	vim.api.nvim_echo({ { pattern, highlight } }, false, {})
+	vim.cmd("redraw!")
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -140,7 +148,8 @@ end
 
 function M.clear_feedbacks()
 	clear_highlights()
-	echo_pattern("", {})
+	echo_pattern(nil, {})
+	vim.cmd("redraw!")
 end
 
 function M.cancel_highlights_timer()

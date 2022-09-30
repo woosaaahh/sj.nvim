@@ -51,6 +51,7 @@ local checks = {
 	max_pattern_length = { func = is_unsigned_number, message = "must be an unsigned number" },
 	pattern_type = { func = is_string, message = "must be a string" },
 	preserve_highlights = { func = is_boolean, message = "must be a boolean" },
+	prompt_prefix = { func = is_string, message = "must be a string" },
 	relative_labels = { func = is_boolean, message = "must be a boolean" },
 	search_scope = { func = is_string, message = "must be a string" },
 	separator = { func = is_char, message = "must be a character" },
@@ -82,6 +83,7 @@ local M = {
 		max_pattern_length = 0, -- if > 0, wait for a label after N characters
 		pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 		preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
+		prompt_prefix = "", -- if set, the string will be used as prefix in the command line
 		relative_labels = false, -- if true, labels are ordered from cursor position, not from the top of the buffer
 		search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines)
 		separator = ":", -- character used to split the user input in <pattern> and <label>

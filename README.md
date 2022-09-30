@@ -74,6 +74,7 @@ local config = {
 	max_pattern_length = 0, -- if > 0, wait for a label after N characters
 	pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 	preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
+	prompt_prefix = "", -- if set, the string will be used as prefix in the command line
 	relative_labels = false, -- if true, labels are ordered from cursor position, not from the top of the buffer
 	search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
 	separator = ":", -- character used to split the user input in <pattern> and <label>
@@ -113,6 +114,7 @@ local colors = {
 local sj = require("sj")
 sj.setup({
 	pattern_type = "vim_very_magic",
+    prompt_prefix = "Pattern ? ",
 	search_scope = "visible_lines",
 
 	highlights = {
