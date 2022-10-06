@@ -17,9 +17,15 @@ local M = {}
 
 ------------------------------------------------------------------------------------------------------------------------
 
+local function valid_bufnr(bufnr)
+	return type(bufnr) == "number" and vim.api.nvim_buf_is_valid(bufnr)
+end
+
 local function init_highlights()
+	local bufnr = valid_bufnr(cache.state.bufnr) and cache.state.bufnr or 0
+
 	for hl_group, hl_target in pairs(hl_group_links) do
-		vim.api.nvim_set_hl(cache.state.bufnr or 0, hl_group, { link = hl_target, default = true })
+		vim.api.nvim_set_hl(bufnr, hl_group, { link = hl_target, default = true })
 	end
 end
 init_highlights()
@@ -30,16 +36,18 @@ local function replace_highlights(new_highlights)
 	end
 
 	local old_hl_conf, new_hl_conf
+	local bufnr = valid_bufnr(cache.state.bufnr) and cache.state.bufnr or 0
 
 	for hl_group in pairs(hl_group_links) do
 		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
 		new_hl_conf = new_highlights[hl_group] or old_hl_conf
-		vim.api.nvim_set_hl(cache.state.bufnr or 0, hl_group, new_hl_conf)
+		vim.api.nvim_set_hl(bufnr, hl_group, new_hl_conf)
 	end
 end
 
 local function clear_highlights()
-	vim.api.nvim_buf_clear_namespace(cache.state.bufnr or 0, namespace, 0, -1)
+	local bufnr = valid_bufnr(cache.state.bufnr) and cache.state.bufnr or 0
+	vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -48,9 +56,10 @@ local function apply_overlay(redraw)
 	if cache.options.use_overlay ~= true then
 		return
 	end
+	local bufnr = valid_bufnr(cache.state.bufnr) and cache.state.bufnr or 0
 
 	for lnum = 0, vim.fn.line("$") - 1 do
-		vim.api.nvim_buf_add_highlight(cache.state.bufnr or 0, namespace, "SjOverlay", lnum, 0, -1)
+		vim.api.nvim_buf_add_highlight(bufnr, namespace, "SjOverlay", lnum, 0, -1)
 	end
 
 	if redraw ~= false then
@@ -71,6 +80,7 @@ local function highlight_matches(labels_map, pattern)
 	clear_highlights()
 	apply_overlay(false) -- redrawing here would cause flickering
 
+	local bufnr = valid_bufnr(cache.state.bufnr) and cache.state.bufnr or 0
 	for label, match_range in pairs(labels_map) do
 		lnum, start_idx, end_idx = unpack(match_range)
 		label_pos = math.max(start_idx - 1, 0)
@@ -82,9 +92,9 @@ local function highlight_matches(labels_map, pattern)
 			label_highlight = last_label_highlight
 		end
 
-		vim.api.nvim_buf_add_highlight(cache.state.bufnr or 0, namespace, "SjMatches", lnum, start_idx - 1, end_idx)
+		vim.api.nvim_buf_add_highlight(bufnr, namespace, "SjMatches", lnum, start_idx - 1, end_idx)
 
-		vim.api.nvim_buf_set_extmark(cache.state.bufnr or 0, namespace, lnum, label_pos, {
+		vim.api.nvim_buf_set_extmark(bufnr, namespace, lnum, label_pos, {
 			virt_text = { { label, label_highlight } },
 			virt_text_pos = "overlay",
 		})
