@@ -71,6 +71,7 @@ local function update_highlights(user_highlights)
 		-- so we "restore" the configuration by using the one from the target group.
 		if #old_hl_conf == 0 then
 			old_hl_conf = vim.api.nvim_get_hl_by_name(hl_target, true)
+			old_hl_conf.default = true
 		end
 
 		if config.update_highlights == true then
