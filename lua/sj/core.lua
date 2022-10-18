@@ -2,26 +2,18 @@ local cache = require("sj.cache")
 local ui = require("sj.ui")
 local utils = require("sj.utils")
 
-local keys = {
-	ESC = vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
+local keymaps = {
+	cancel = vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
+	validate = vim.api.nvim_replace_termcodes("<CR>", true, false, true),
+	prev_match = vim.api.nvim_replace_termcodes("<A-,>", true, false, true),
+	next_match = vim.api.nvim_replace_termcodes("<A-;>", true, false, true),
 
-	CR = vim.api.nvim_replace_termcodes("<CR>", true, false, true),
-	NL = vim.api.nvim_replace_termcodes("<NL>", true, false, true),
+	delete_prev_char = vim.api.nvim_replace_termcodes("<BS>", true, false, true),
+	delete_prev_word = vim.api.nvim_replace_termcodes("<C-W>", true, false, true),
+	delete_pattern = vim.api.nvim_replace_termcodes("<C-U>", true, false, true),
+	restore_pattern = vim.api.nvim_replace_termcodes("<A-BS>", true, false, true),
 
-	BS = vim.api.nvim_replace_termcodes("<BS>", true, false, true),
-	C_H = vim.api.nvim_replace_termcodes("<C-H>", true, false, true),
-
-	C_W = vim.api.nvim_replace_termcodes("<C-W>", true, false, true),
-
-	A_BS = vim.api.nvim_replace_termcodes("<A-BS>", true, false, true),
-
-	C_U = vim.api.nvim_replace_termcodes("<C-U>", true, false, true),
-
-	A_COMMA = vim.api.nvim_replace_termcodes("<A-,>", true, false, true),
-	A_SEMICOLON = vim.api.nvim_replace_termcodes("<A-;>", true, false, true),
-
-	A_Q = vim.api.nvim_replace_termcodes("<A-q>", true, false, true),
-	C_Q = vim.api.nvim_replace_termcodes("<C-q>", true, false, true),
+	send_to_qflist = vim.api.nvim_replace_termcodes("<A-q>", true, false, true),
 }
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -216,6 +208,14 @@ end
 
 local M = {}
 
+function M.manage_keymaps(new_keymaps)
+	for action, _ in pairs(keymaps) do
+		if type(new_keymaps[action]) == "string" and #new_keymaps[action] > 0 then
+			keymaps[action] = vim.api.nvim_replace_termcodes(new_keymaps[action], true, false, true)
+		end
+	end
+end
+
 function M.jump_to(range)
 	if type(range) ~= "table" then
 		return
@@ -321,24 +321,24 @@ function M.get_user_input()
 		ok, keynum = pcall(vim.fn.getchar)
 		if ok then
 			char = type(keynum) == "number" and vim.fn.nr2char(keynum) or ""
-			if char == keys.ESC then
+			if char == keymaps.cancel or keynum == keymaps.cancel then
 				user_input, labels_map = "", {}
 				break
-			elseif char == keys.CR or char == keys.NL then
+			elseif char == keymaps.validate or keynum == keymaps.validate then
 				break
-			elseif keynum == keys.BS or char == keys.C_H then
+			elseif char == keymaps.delete_prev_char or keynum == keymaps.delete_prev_char then
 				user_input = #user_input > 0 and user_input:sub(1, #user_input - 1) or user_input
-			elseif char == keys.C_W then
+			elseif char == keymaps.delete_prev_word or keynum == keymaps.delete_prev_word then
 				user_input = vim.fn.substitute(user_input, delete_prev_word_rx, "", "")
-			elseif keynum == keys.A_BS then
+			elseif char == keymaps.restore_pattern or keynum == keymaps.restore_pattern then
 				user_input = last_matching_pattern
-			elseif char == keys.C_U then
+			elseif char == keymaps.delete_pattern or keynum == keymaps.delete_pattern then
 				user_input = ""
-			elseif keynum == keys.A_COMMA then
+			elseif char == keymaps.prev_match or keynum == keymaps.prev_match then
 				cache.state.label_index = cache.state.label_index - 1
-			elseif keynum == keys.A_SEMICOLON then
+			elseif char == keymaps.next_match or keynum == keymaps.next_match then
 				cache.state.label_index = cache.state.label_index + 1
-			elseif keynum == keys.A_Q or char == keys.C_Q then
+			elseif char == keymaps.send_to_qflist or keynum == keymaps.send_to_qflist then
 				send_to_qflist(matches)
 				break
 			elseif cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
@@ -378,12 +378,17 @@ function M.get_user_input()
 		update_search_register(cache.state.last_used_pattern, cache.options.pattern_type)
 	end
 
-	if char == keys.ESC then
+	if char == keymaps.cancel then
 		M.jump_to({ cursor_pos[1] - 1, cursor_pos[2] + 1 })
 		return
 	end
 
-	if char == keys.CR or char == keys.NL or keynum == keys.A_Q or char == keys.C_Q then
+	if
+		char == keymaps.validate
+		or keynum == keymaps.validate
+		or char == keymaps.send_to_qflist
+		or keynum == keymaps.send_to_qflist
+	then
 		return
 	end
 

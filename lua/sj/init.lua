@@ -15,6 +15,8 @@ end
 function M.setup(opts)
 	cache.defaults = vim.tbl_deep_extend("force", config.defaults, config.filter_options(opts or {}))
 	cache.options = vim.deepcopy(cache.defaults)
+
+	core.manage_keymaps(cache.options.keymaps)
 	ui.manage_highlights(cache.options.highlights, cache.options.preserve_highlights)
 end
 

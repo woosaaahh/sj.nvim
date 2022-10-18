@@ -18,6 +18,20 @@ local function is_string(v)
 	return type(v) == "string"
 end
 
+local function valid_keymaps(v)
+	if type(v) ~= "table" then
+		return false
+	end
+
+	for key, val in pairs(v) do
+		if type(key) ~= "string" or type(val) ~= "string" then
+			return false
+		end
+	end
+
+	return true
+end
+
 local function valid_highlights(v)
 	if type(v) ~= "table" then
 		return false
@@ -47,6 +61,7 @@ local checks = {
 	forward_search = { func = is_boolean, message = "must be a boolean" },
 	highlights = { func = valid_highlights, message = "must be a table with tables as values" },
 	highlights_timeout = { func = is_unsigned_number, message = "must be an unsigned number" },
+	keymaps = { func = valid_keymaps, message = "must be a table with string as values" },
 	labels = { func = valid_labels, message = "must be a list of characters" },
 	max_pattern_length = { func = is_unsigned_number, message = "must be an unsigned number" },
 	pattern_type = { func = is_string, message = "must be a string" },
@@ -91,6 +106,20 @@ local M = {
 		use_last_pattern = false, -- if true, reuse the last pattern for next calls
 		use_overlay = true, -- if true, apply an overlay to better identify labels and matches
 		wrap_jumps = vim.o.wrapscan, -- if true, wrap the jumps when focusing previous or next label
+
+		keymaps = {
+			cancel = "<Esc>", -- cancel the search
+			validate = "<CR>", -- jump to the current focused label and match
+			prev_match = "<A-,>", -- focus the previous label and match
+			next_match = "<A-;>", -- focus the next label and match
+			---
+			delete_prev_char = "<BS>", -- delete previous character
+			delete_prev_word = "<C-w>", -- delete previous word
+			delete_pattern = "<C-u>", -- delete the whole pattern
+			restore_pattern = "<A-BS>", -- restore the pattern to the last matching version
+			---
+			send_to_qflist = "<A-q>", --- send search result to the quickfix list
+		},
 
 		-- stylua: ignore
 		labels = {

@@ -82,6 +82,21 @@ local config = {
 	use_last_pattern = false, -- if true, reuse the last pattern for next calls
 	use_overlay = true, -- if true, apply an overlay to better identify labels and matches
 	wrap_jumps = vim.o.wrapscan, -- if true, wrap the jumps when focusing previous or next label
+
+	keymaps = {
+		cancel = "<Esc>", -- cancel the search
+		validate = "<CR>", -- jump to the current focused label and match
+		prev_match = "<A-,>", -- focus the previous label and match
+		next_match = "<A-;>", -- focus the next label and match
+		---
+		delete_prev_char = "<BS>", -- delete previous character
+		delete_prev_word = "<C-w>", -- delete previous word
+		delete_pattern = "<C-u>", -- delete the whole pattern
+		restore_pattern = "<A-BS>", -- restore the pattern to the last matching version
+		---
+		send_to_qflist = "<A-q>", --- send search result to the quickfix list
+	},
+
 	-- stylua: ignore
 	labels = {
 		"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
@@ -124,6 +139,13 @@ sj.setup({
 		SjMatches = { fg = colors.light_gray, bg = colors.darker_blue, bold = false, italic = false },
 		SjNoMatches = { fg = colors.orange, bold = false, italic = false },
 		SjOverlay = { fg = colors.dark_blue, bold = false, italic = false },
+	},
+
+	keymaps = {
+		prev_match = "<C-p>", -- focus the previous label and match
+		next_match = "<C-n>", -- focus the next label and match
+		---
+		send_to_qflist = "<C-q>", --- send search result to the quickfix list
 	},
 })
 
