@@ -11,6 +11,8 @@ local keys = {
 	BS = vim.api.nvim_replace_termcodes("<BS>", true, false, true),
 	C_H = vim.api.nvim_replace_termcodes("<C-H>", true, false, true),
 
+	C_W = vim.api.nvim_replace_termcodes("<C-W>", true, false, true),
+
 	A_BS = vim.api.nvim_replace_termcodes("<A-BS>", true, false, true),
 
 	C_U = vim.api.nvim_replace_termcodes("<C-U>", true, false, true),
@@ -291,6 +293,7 @@ function M.get_user_input()
 	local need_looping = true
 	local first_line, last_line = M.get_lines(cache.options.search_scope)
 	local cursor_pos = vim.api.nvim_win_get_cursor(0)
+	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
 	cache.state.first_line, cache.state.last_line = first_line, last_line
 	cache.state.cursor_pos = cursor_pos
@@ -325,6 +328,8 @@ function M.get_user_input()
 				break
 			elseif keynum == keys.BS or char == keys.C_H then
 				user_input = #user_input > 0 and user_input:sub(1, #user_input - 1) or user_input
+			elseif char == keys.C_W then
+				user_input = vim.fn.substitute(user_input, delete_prev_word_rx, "", "")
 			elseif keynum == keys.A_BS then
 				user_input = last_matching_pattern
 			elseif char == keys.C_U then
