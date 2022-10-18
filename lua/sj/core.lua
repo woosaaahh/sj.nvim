@@ -78,25 +78,23 @@ local function create_labels_map(labels, matches, reverse)
 end
 
 local function pattern_ranges(text, pattern, search)
+	local iters, text_len = 0, #text
 	local start_idx, end_idx, init
-	local iters, text_len, ranges = 0, #text, {}
+	local ranges = {}
 
-	start_idx, end_idx = search(text, pattern)
+	if text_len == 0 then
+		return ranges
+	end
 
-	while end_idx and end_idx > 0 do
-		if iters > text_len then
-			break
-		end
+	while iters <= text_len do
 		iters = iters + 1
 
-		if start_idx == end_idx then
-			init = end_idx + 1
-		else
-			init = end_idx
+		start_idx, end_idx, init = search(text, pattern, init)
+		if start_idx == nil then
+			break
 		end
 
 		table.insert(ranges, { start_idx, end_idx })
-		start_idx, end_idx = search(text, pattern, init)
 	end
 
 	return ranges
@@ -109,13 +107,18 @@ local function get_search_function(pattern_type)
 
 	local plain = pattern_type:find("plain$") and true or false
 	local function lua_search(text, pattern, init)
-		return text:find(pattern, init, plain)
+		local start_idx, end_idx = text:find(pattern, init, plain)
+		if start_idx ~= nil then
+			return start_idx, end_idx, start_idx and start_idx == end_idx and end_idx + 1 or end_idx
+		end
 	end
 
 	local prefix = pattern_type == "vim_very_magic" and "\\v" or ""
 	local function vim_search(text, pattern, init)
 		local _, start_idx, end_idx = unpack(vim.fn.matchstrpos(text, prefix .. pattern, init))
-		return start_idx + 1, end_idx
+		if start_idx ~= -1 then
+			return start_idx + 1, end_idx, end_idx
+		end
 	end
 
 	if pattern_type:find("^lua") then
