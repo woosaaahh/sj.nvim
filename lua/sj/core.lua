@@ -107,6 +107,10 @@ local function get_search_function(pattern_type)
 
 	local plain = pattern_type:find("plain$") and true or false
 	local function lua_search(text, pattern, init)
+		if vim.o.ignorecase == true and not (vim.o.smartcase == true and pattern:find("%u") ~= nil) then
+			text = text:lower()
+			pattern = pattern:lower()
+		end
 		local start_idx, end_idx = text:find(pattern, init, plain)
 		if start_idx ~= nil then
 			return start_idx, end_idx, start_idx and start_idx == end_idx and end_idx + 1 or end_idx
@@ -136,10 +140,6 @@ local function find_matches(pattern, first_line, last_line)
 	local lines = vim.api.nvim_buf_get_lines(0, first_line - 1, last_line, false)
 	local search = get_search_function(cache.options.pattern_type)
 	local matches = {}
-
-	if vim.opt.smartcase and not pattern:find("%u") then
-		pattern = pattern:lower()
-	end
 
 	local cursor_lnum, cursor_col = cache.state.cursor_pos[1], cache.state.cursor_pos[2] + 1
 
