@@ -7,6 +7,8 @@ local keymaps = {
 	validate = vim.api.nvim_replace_termcodes("<CR>", true, false, true),
 	prev_match = vim.api.nvim_replace_termcodes("<A-,>", true, false, true),
 	next_match = vim.api.nvim_replace_termcodes("<A-;>", true, false, true),
+	prev_pattern = vim.api.nvim_replace_termcodes("<C-p>", true, false, true),
+	next_pattern = vim.api.nvim_replace_termcodes("<C-n>", true, false, true),
 
 	delete_prev_char = vim.api.nvim_replace_termcodes("<BS>", true, false, true),
 	delete_prev_word = vim.api.nvim_replace_termcodes("<C-W>", true, false, true),
@@ -15,6 +17,9 @@ local keymaps = {
 
 	send_to_qflist = vim.api.nvim_replace_termcodes("<A-q>", true, false, true),
 }
+
+local search_history = {}
+local pattern_index = #search_history + 1
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -49,6 +54,36 @@ local function send_to_qflist(matches)
 		}
 	end
 	vim.fn.setqflist(qf_list)
+end
+
+local function get_prev_pattern()
+	pattern_index = pattern_index <= 1 and 1 or pattern_index - 1
+	return search_history[pattern_index]
+end
+
+local function get_next_pattern()
+	pattern_index = pattern_index >= #search_history and #search_history or pattern_index + 1
+	return search_history[pattern_index]
+end
+
+local function update_search_history(pattern)
+	if type(pattern) ~= "string" or #pattern == 0 then
+		return
+	end
+
+	table.insert(search_history, pattern)
+
+	local last_pattern = pattern
+	local new_search_history = {}
+
+	for _, pattern in ipairs(search_history) do
+		if pattern ~= last_pattern then
+			table.insert(new_search_history, pattern)
+		end
+	end
+
+	table.insert(new_search_history, last_pattern)
+	search_history = new_search_history
 end
 
 local function create_labels_map(labels, matches, reverse)
@@ -295,6 +330,8 @@ function M.get_user_input()
 	local cursor_pos = vim.api.nvim_win_get_cursor(0)
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
+	pattern_index = #search_history + 1
+
 	cache.state.first_line, cache.state.last_line = first_line, last_line
 	cache.state.cursor_pos = cursor_pos
 
@@ -334,6 +371,10 @@ function M.get_user_input()
 				user_input = last_matching_pattern
 			elseif char == keymaps.delete_pattern or keynum == keymaps.delete_pattern then
 				user_input = ""
+			elseif char == keymaps.prev_pattern or keynum == keymaps.prev_pattern then
+				user_input = get_prev_pattern()
+			elseif char == keymaps.next_pattern or keynum == keymaps.next_pattern then
+				user_input = get_next_pattern()
 			elseif char == keymaps.prev_match or keynum == keymaps.prev_match then
 				cache.state.label_index = cache.state.label_index - 1
 			elseif char == keymaps.next_match or keynum == keymaps.next_match then
@@ -373,6 +414,7 @@ function M.get_user_input()
 	ui.clear_feedbacks()
 
 	cache.state.last_used_pattern = pattern
+	update_search_history(pattern)
 
 	if cache.options.update_search_register == true then
 		update_search_register(cache.state.last_used_pattern, cache.options.pattern_type)

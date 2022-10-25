@@ -88,6 +88,8 @@ local config = {
 		validate = "<CR>", -- jump to the current focused label and match
 		prev_match = "<A-,>", -- focus the previous label and match
 		next_match = "<A-;>", -- focus the next label and match
+		prev_pattern = "<C-p>", -- select prev pattern while searching
+		next_pattern = "<C-n>", -- select next pattern while searching
 		---
 		delete_prev_char = "<BS>", -- delete previous character
 		delete_prev_word = "<C-w>", -- delete previous word
