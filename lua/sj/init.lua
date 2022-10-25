@@ -70,7 +70,7 @@ function M.next_match()
 	local matches, labels_map = core.search_pattern(pattern, cache.state.first_line, cache.state.last_line)
 
 	ui.cancel_highlights_timer()
-	ui.show_feedbacks(pattern, matches, labels_map)
+	ui.highlight_matches(labels_map, pattern, false)
 	core.focus_label(1, matches)
 
 	cache.options.relative_labels = relative_labels

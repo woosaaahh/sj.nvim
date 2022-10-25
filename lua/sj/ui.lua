@@ -67,42 +67,6 @@ local function apply_overlay(redraw)
 	end
 end
 
-local function highlight_matches(labels_map, pattern)
-	local lnum, start_idx, end_idx, label_pos
-	local cursor_label
-
-	local label_highlight = "SjLabel"
-	if cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
-		label_highlight = "SjLimitReached"
-	end
-	local last_label_highlight = label_highlight
-
-	clear_highlights()
-	apply_overlay(false) -- redrawing here would cause flickering
-
-	local bufnr = valid_bufnr(cache.state.bufnr) and cache.state.bufnr or 0
-	for label, match_range in pairs(labels_map) do
-		lnum, start_idx, end_idx = unpack(match_range)
-		label_pos = math.max(start_idx - 1, 0)
-
-		cursor_label = cache.options.labels[cache.state.label_index]
-		if label == cursor_label then
-			label_highlight = "SjFocusedLabel"
-		else
-			label_highlight = last_label_highlight
-		end
-
-		vim.api.nvim_buf_add_highlight(bufnr, namespace, "SjMatches", lnum, start_idx - 1, end_idx)
-
-		vim.api.nvim_buf_set_extmark(bufnr, namespace, lnum, label_pos, {
-			virt_text = { { label, label_highlight } },
-			virt_text_pos = "overlay",
-		})
-	end
-
-	vim.cmd.redraw()
-end
-
 local function echo_pattern(pattern, matches)
 	local highlight = ""
 	if pattern ~= nil and #pattern > 0 and type(matches) == "table" and #matches < 1 then
@@ -151,10 +115,48 @@ function M.manage_highlights(new_highlights, preserve_highlights)
 	})
 end
 
+function M.highlight_matches(labels_map, pattern, show_labels)
+	local lnum, start_idx, end_idx, label_pos
+	local cursor_label
+
+	local label_highlight = "SjLabel"
+	if cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
+		label_highlight = "SjLimitReached"
+	end
+	local last_label_highlight = label_highlight
+
+	clear_highlights()
+	apply_overlay(false) -- redrawing here would cause flickering
+
+	local bufnr = valid_bufnr(cache.state.bufnr) and cache.state.bufnr or 0
+	for label, match_range in pairs(labels_map) do
+		lnum, start_idx, end_idx = unpack(match_range)
+		label_pos = math.max(start_idx - 1, 0)
+
+		cursor_label = cache.options.labels[cache.state.label_index]
+		if label == cursor_label then
+			label_highlight = "SjFocusedLabel"
+		else
+			label_highlight = last_label_highlight
+		end
+
+		vim.api.nvim_buf_add_highlight(bufnr, namespace, "SjMatches", lnum, start_idx - 1, end_idx)
+
+		if show_labels ~= false then
+			vim.api.nvim_buf_set_extmark(bufnr, namespace, lnum, label_pos, {
+				virt_text = { { label, label_highlight } },
+				virt_text_pos = "overlay",
+			})
+		end
+	end
+
+	vim.cmd.redraw()
+end
+
 function M.show_feedbacks(pattern, matches, labels_map)
 	cache.state.bufnr = vim.api.nvim_get_current_buf()
 	apply_overlay()
-	highlight_matches(labels_map, pattern)
+	M.highlight_matches(labels_map, pattern)
 	echo_pattern(pattern, matches)
 end
 
