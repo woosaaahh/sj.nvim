@@ -137,13 +137,15 @@ function M.manage_highlights(new_highlights, preserve_highlights)
 		vim.api.nvim_clear_autocmds({ group = augroup, event = "ColorScheme" })
 	end
 
-	vim.api.nvim_create_autocmd("CursorHold", {
+	vim.api.nvim_create_autocmd({ "CursorHold", "ModeChanged" }, {
 		group = augroup,
 		pattern = "*",
-		desc = "Clear highlights when the cursor move",
-		callback = function()
-			if cache.options.highlights_timeout > 0 then
+		desc = "Clear highlights when the cursor stopped moving for a while or the mode changed",
+		callback = function(args)
+			if args.event == "CursorHold" and cache.options.highlights_timeout > 0 then
 				clear_timer = vim.defer_fn(clear_highlights, cache.options.highlights_timeout)
+			else
+				clear_highlights()
 			end
 		end,
 	})
