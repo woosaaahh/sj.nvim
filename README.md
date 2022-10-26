@@ -12,6 +12,12 @@ vim: expandtab tabstop=2
 Search based navigation combined with quick jump features.
 
 <p align="center">
+  Demo<br>
+  <img src="https://user-images.githubusercontent.com/111681540/197946515-e2818592-bf3d-439a-99f3-8c9eabd2fbce.gif">
+</p>
+
+<p align="center">
+  Screenshots<br>
   <img src="https://user-images.githubusercontent.com/111681540/197934569-999dba0d-bbd2-4a9b-8be5-997207ac0cc0.png">
   <img src="https://user-images.githubusercontent.com/111681540/197934582-b860c767-64f4-4b44-b38b-007afb4e8cc1.png">
 </p>
