@@ -11,6 +11,10 @@ vim: expandtab tabstop=2
 
 Search based navigation combined with quick jump features.
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/111681540/197934569-999dba0d-bbd2-4a9b-8be5-997207ac0cc0.png">
+  <img src="https://user-images.githubusercontent.com/111681540/197934582-b860c767-64f4-4b44-b38b-007afb4e8cc1.png">
+</p>
 
 ### Requirements
 
@@ -117,8 +121,8 @@ local config = {
 
 and here is a configuration sample :
 
-**DISCLAIMER** : This plugin is not intended to replace the native functions of Neovim. I
-do not recommend adding keymaps that replaces `/, ?, f/F, t/T...`.
+**DISCLAIMER** : This plugin is not intended to replace the native functions of Neovim.
+<br>I do not recommend adding keymaps that replaces `/, ?, f/F, t/T...`.
 
 ```lua
 local sj = require("sj")
@@ -233,8 +237,8 @@ vim.keymap.set("n", "<localleader>s", function()
 end)
 ```	
 
-**DISCLAIMER** : This plugin is not intended to replace the native functions of Neovim. I
-do not recommend adding keymaps that replaces `/, ?, f/F, t/T...`.
+**DISCLAIMER** : This plugin is not intended to replace the native functions of Neovim. 
+<br>I do not recommend adding keymaps that replaces `/, ?, f/F, t/T...`.
 
 ## Why
 
