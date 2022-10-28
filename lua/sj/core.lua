@@ -86,26 +86,6 @@ local function update_search_history(pattern)
 	search_history = new_search_history
 end
 
-local function create_labels_map(labels, matches, reverse)
-	local label
-	local labels_map = {}
-
-	for match_num, _ in pairs(matches) do
-		label = labels[match_num]
-		if not label then
-			break
-		end
-
-		if reverse == true then
-			labels_map[label] = matches[#matches + 1 - match_num]
-		else
-			labels_map[label] = matches[match_num]
-		end
-	end
-
-	return labels_map
-end
-
 local function pattern_ranges(text, pattern, search)
 	local iters, text_len = 0, #text
 	local start_idx, end_idx, init
@@ -159,71 +139,6 @@ local function get_search_function(pattern_type)
 	else
 		return vim_search
 	end
-end
-
-local function find_matches(pattern, first_line, last_line)
-	if type(pattern) ~= "string" or #pattern < 1 then
-		return {}
-	end
-
-	local lines = vim.api.nvim_buf_get_lines(0, first_line - 1, last_line, false)
-	local search = get_search_function(cache.options.pattern_type)
-	local matches = {}
-
-	local cursor_lnum, cursor_col = cache.state.cursor_pos[1], cache.state.cursor_pos[2] + 1
-
-	local forward = cache.options.forward_search == true
-	local relative = cache.options.relative_labels == true
-
-	local match_lnum, match_col, match_end_col
-	local prev_matches, next_matches = {}, {}
-
-	for i, line in ipairs(lines) do
-		if #matches > #cache.options.labels then
-			break
-		end
-
-		--- skip errors due to % at the end (lua), unbalanced (), ...
-		local ok, ranges = pcall(pattern_ranges, line, pattern, search)
-
-		if ok then
-			for _, match_range in ipairs(ranges) do
-				match_lnum, match_col, match_end_col = first_line - 1 + i, unpack(match_range)
-				match_range = { match_lnum - 1, match_col, match_end_col }
-
-				--- prev matches
-				if match_lnum < cursor_lnum then
-					table.insert(prev_matches, match_range)
-				elseif match_lnum == cursor_lnum and forward == false and match_col < cursor_col then
-					table.insert(prev_matches, match_range)
-				elseif match_lnum == cursor_lnum and forward == true and match_col <= cursor_col then
-					table.insert(prev_matches, match_range)
-
-				--- next matches
-				elseif match_lnum == cursor_lnum and forward == false and match_col >= cursor_col then
-					table.insert(next_matches, match_range)
-				elseif match_lnum == cursor_lnum and forward == true and match_col > cursor_col then
-					table.insert(next_matches, match_range)
-				elseif match_lnum > cursor_lnum then
-					table.insert(next_matches, match_range)
-				end
-
-				---
-			end
-		end
-	end
-
-	if relative == false and forward == false then
-		matches = utils.list_reverse(utils.list_extend(prev_matches, next_matches))
-	elseif relative == false and forward == true then
-		matches = utils.list_extend(prev_matches, next_matches)
-	elseif relative == true and forward == false then
-		matches = utils.list_extend(utils.list_reverse(prev_matches), utils.list_reverse(next_matches))
-	elseif relative == true and forward == true then
-		matches = utils.list_extend(next_matches, prev_matches)
-	end
-
-	return matches
 end
 
 local function extract_pattern_and_label(user_input, separator)
@@ -298,12 +213,6 @@ function M.focus_label(label_index, matches)
 	M.jump_to(match_range)
 end
 
-function M.search_pattern(pattern, first_line, last_line)
-	local matches = find_matches(pattern, first_line, last_line)
-	local labels_map = create_labels_map(cache.options.labels, matches, false)
-	return matches, labels_map
-end
-
 function M.get_lines(search_scope)
 	local cursor_line = vim.fn.line(".")
 	local first_visible_line, last_visible_line = vim.fn.line("w0"), vim.fn.line("w$")
@@ -318,6 +227,91 @@ function M.get_lines(search_scope)
 	}
 
 	return unpack(cases[search_scope] or cases["visible_lines"])
+end
+
+function M.create_labels_map(labels, matches, reverse)
+	local label
+	local labels_map = {}
+
+	for match_num, _ in pairs(matches) do
+		label = labels[match_num]
+		if not label then
+			break
+		end
+
+		if reverse == true then
+			labels_map[label] = matches[#matches + 1 - match_num]
+		else
+			labels_map[label] = matches[match_num]
+		end
+	end
+
+	return labels_map
+end
+
+function M.find_matches(pattern, first_line, last_line)
+	if type(pattern) ~= "string" or #pattern < 1 then
+		return {}
+	end
+
+	local lines = vim.api.nvim_buf_get_lines(0, first_line - 1, last_line, false)
+	local search = get_search_function(cache.options.pattern_type)
+	local matches = {}
+
+	local cursor_lnum, cursor_col = cache.state.cursor_pos[1], cache.state.cursor_pos[2] + 1
+
+	local forward = cache.options.forward_search == true
+	local relative = cache.options.relative_labels == true
+
+	local match_lnum, match_col, match_end_col
+	local prev_matches, next_matches = {}, {}
+
+	for i, line in ipairs(lines) do
+		if #matches > #cache.options.labels then
+			break
+		end
+
+		--- skip errors due to % at the end (lua), unbalanced (), ...
+		local ok, ranges = pcall(pattern_ranges, line, pattern, search)
+
+		if ok then
+			for _, match_range in ipairs(ranges) do
+				match_lnum, match_col, match_end_col = first_line - 1 + i, unpack(match_range)
+				match_range = { match_lnum - 1, match_col, match_end_col }
+
+				--- prev matches
+				if match_lnum < cursor_lnum then
+					table.insert(prev_matches, match_range)
+				elseif match_lnum == cursor_lnum and forward == false and match_col < cursor_col then
+					table.insert(prev_matches, match_range)
+				elseif match_lnum == cursor_lnum and forward == true and match_col <= cursor_col then
+					table.insert(prev_matches, match_range)
+
+				--- next matches
+				elseif match_lnum == cursor_lnum and forward == false and match_col >= cursor_col then
+					table.insert(next_matches, match_range)
+				elseif match_lnum == cursor_lnum and forward == true and match_col > cursor_col then
+					table.insert(next_matches, match_range)
+				elseif match_lnum > cursor_lnum then
+					table.insert(next_matches, match_range)
+				end
+
+				---
+			end
+		end
+	end
+
+	if relative == false and forward == false then
+		matches = utils.list_reverse(utils.list_extend(prev_matches, next_matches))
+	elseif relative == false and forward == true then
+		matches = utils.list_extend(prev_matches, next_matches)
+	elseif relative == true and forward == false then
+		matches = utils.list_extend(utils.list_reverse(prev_matches), utils.list_reverse(next_matches))
+	elseif relative == true and forward == true then
+		matches = utils.list_extend(next_matches, prev_matches)
+	end
+
+	return matches
 end
 
 function M.get_user_input()
@@ -340,7 +334,7 @@ function M.get_user_input()
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
 		user_input = cache.state.last_used_pattern
 		pattern = cache.state.last_used_pattern
-		matches, labels_map = M.search_pattern(user_input, first_line, last_line)
+		matches = M.find_matches(user_input, first_line, last_line)
 		M.focus_label(cache.state.label_index, matches)
 	end
 
@@ -349,6 +343,7 @@ function M.get_user_input()
 	end
 
 	if need_looping == true then
+		labels_map = M.create_labels_map(cache.options.labels, matches, false)
 		ui.show_feedbacks(pattern, matches, labels_map)
 	end
 
@@ -393,7 +388,8 @@ function M.get_user_input()
 
 		pattern, label = extract_pattern_and_label(user_input, cache.options.separator)
 
-		matches, labels_map = M.search_pattern(pattern, first_line, last_line)
+		matches = M.find_matches(pattern, first_line, last_line)
+		labels_map = M.create_labels_map(cache.options.labels, matches, false)
 		M.focus_label(cache.state.label_index, matches)
 		ui.show_feedbacks(pattern, matches, labels_map)
 
