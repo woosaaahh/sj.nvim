@@ -213,10 +213,10 @@ function M.focus_label(label_index, matches)
 	M.jump_to(match_range)
 end
 
-function M.get_lines(search_scope)
-	local cursor_line = vim.fn.line(".")
-	local first_visible_line, last_visible_line = vim.fn.line("w0"), vim.fn.line("w$")
-	local first_buffer_line, last_buffer_line = 1, vim.fn.line("$")
+function M.win_get_lines_range(win_id, scope)
+	local cursor_line = vim.fn.line(".", win_id)
+	local first_visible_line, last_visible_line = vim.fn.line("w0", win_id), vim.fn.line("w$", win_id)
+	local first_buffer_line, last_buffer_line = 1, vim.fn.line("$", win_id)
 
 	local cases = {
 		current_line = { cursor_line, cursor_line },
@@ -226,7 +226,7 @@ function M.get_lines(search_scope)
 		buffer = { first_buffer_line, last_buffer_line },
 	}
 
-	return unpack(cases[search_scope] or cases["visible_lines"])
+	return unpack(cases[scope] or cases["visible_lines"])
 end
 
 function M.create_labels_map(labels, matches, reverse)
@@ -320,7 +320,8 @@ function M.get_user_input()
 	local pattern, label, last_matching_pattern = "", "", ""
 	local matches, labels_map = {}, {}
 	local need_looping = true
-	local first_line, last_line = M.get_lines(cache.options.search_scope)
+	local win_id = vim.api.nvim_get_current_win()
+	local first_line, last_line = M.win_get_lines_range(win_id, cache.options.search_scope)
 	local cursor_pos = vim.api.nvim_win_get_cursor(0)
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
