@@ -65,9 +65,15 @@ function M.next_match()
 	local relative_labels = cache.options.relative_labels
 	cache.options.relative_labels = true
 
-	cache.state.cursor_pos = vim.api.nvim_win_get_cursor(0)
+	local win_id = vim.api.nvim_get_current_win()
+	local search_opts = {
+		forward = cache.options.forward_search,
+		pattern_type = cache.options.pattern_type,
+		relative = cache.options.relative_labels,
+		scope = cache.options.search_scope,
+	}
 
-	local matches = core.find_matches(pattern, cache.state.first_line, cache.state.last_line)
+	local matches = core.win_find_pattern(win_id, pattern, search_opts)
 	local labels_map = core.create_labels_map(cache.options.labels, matches, false)
 
 	ui.cancel_highlights_timer()
