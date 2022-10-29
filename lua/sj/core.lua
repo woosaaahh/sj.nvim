@@ -450,4 +450,39 @@ function M.get_user_input()
 	return user_input, labels_map
 end
 
+function M.select_window()
+	local wins_list = utils.tab_list_wins(0)
+	local wins_ctxt = {}
+	local wins_labels = {}
+
+	for win_nr, win_id in ipairs(wins_list) do
+		local first_line, last_line = M.win_get_lines_range(win_id, "visible_lines")
+		local label = cache.options.labels[win_nr]
+		wins_labels[label] = win_id
+		wins_ctxt[win_id] = {
+			win_id = win_id,
+			buf_nr = vim.api.nvim_win_get_buf(win_id),
+			first_line = first_line,
+			last_line = last_line,
+			label = label,
+		}
+	end
+
+	ui.multi_win_show_indicators(wins_list, wins_ctxt)
+	local ok, keynum = pcall(vim.fn.getchar)
+	ui.multi_win_hide_indicators(wins_list, wins_ctxt)
+
+	if not ok then
+		return
+	end
+
+	local label = type(keynum) == "number" and vim.fn.nr2char(keynum) or ""
+	local win_id = wins_labels[label]
+
+	if win_id then
+		vim.api.nvim_set_current_win(win_id)
+		return win_id
+	end
+end
+
 return M

@@ -90,6 +90,7 @@ local config = {
   prompt_prefix = "", -- if set, the string will be used as a prefix in the command line
   relative_labels = false, -- if true, labels are ordered from the cursor position, not from the top of the buffer
   search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
+  select_window = false, -- if true, ask for a window to jump to before starting the search
   separator = ":", -- character used to split the user input in <pattern> and <label>
   update_search_register = false, -- if true, update the search register with the last used pattern
   use_last_pattern = false, -- if true, reuse the last pattern for next calls
@@ -155,6 +156,14 @@ sj.setup({
 })
 
 --- Keymaps ------------------------------------------------------------------------------
+
+vim.keymap.set("n", "!", function()
+	sj.run({ select_window = true })
+end)
+
+vim.keymap.set("n", "<A-!>", function()
+	sj.select_window()
+end)
 
 --- visible lines -------------------------------------
 

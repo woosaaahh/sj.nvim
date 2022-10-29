@@ -69,4 +69,32 @@ function M.list_reverse(list)
 	return reversed_list
 end
 
+function M.tab_list_wins(tab_nr)
+	tab_nr = (type(tab_nr) == "number" and vim.api.nvim_tabpage_is_valid(tab_nr)) and tab_nr or 0
+
+	return vim.tbl_filter(function(win_id)
+		local win_conf = vim.api.nvim_win_get_config(win_id)
+		if type(win_conf.relative) == "string" and win_conf.relative == "" then
+			return win_id
+		end
+	end, vim.api.nvim_tabpage_list_wins(tab_nr))
+end
+
+function M.multi_win_call(wins_list, func, ...)
+	if type(wins_list) ~= "table" or type(func) ~= "function" then
+		return {}
+	end
+
+	local args = { ... }
+	local results = {}
+
+	for _, win_id in ipairs(wins_list) do
+		results[win_id] = vim.api.nvim_win_call(win_id, function()
+			return func(win_id, unpack(args))
+		end)
+	end
+
+	return results
+end
+
 return M

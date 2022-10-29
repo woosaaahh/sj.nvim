@@ -69,6 +69,7 @@ local checks = {
 	prompt_prefix = { func = is_string, message = "must be a string" },
 	relative_labels = { func = is_boolean, message = "must be a boolean" },
 	search_scope = { func = is_string, message = "must be a string" },
+	select_window = { func = is_boolean, message = "must be a boolean" },
 	separator = { func = is_char, message = "must be a character" },
 	update_search_register = { func = is_boolean, message = "must be a boolean" },
 	use_overlay = { func = is_boolean, message = "must be a boolean" },
@@ -101,6 +102,7 @@ local M = {
 		prompt_prefix = "", -- if set, the string will be used as a prefix in the command line
 		relative_labels = false, -- if true, labels are ordered from the cursor position, not from the top of the buffer
 		search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
+		select_window = false, -- if true, ask for a window to jump to before starting the search
 		separator = ":", -- character used to split the user input in <pattern> and <label>
 		update_search_register = false, -- if true, update the search register with the last used pattern
 		use_last_pattern = false, -- if true, reuse the last pattern for next calls

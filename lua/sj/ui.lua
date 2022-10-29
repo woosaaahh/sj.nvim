@@ -1,4 +1,5 @@
 local cache = require("sj.cache")
+local utils = require("sj.utils")
 
 local clear_timer
 local augroup = vim.api.nvim_create_augroup("SJ", { clear = true })
@@ -78,6 +79,28 @@ local function echo_pattern(pattern, matches)
 
 	vim.api.nvim_echo({ { pattern, highlight } }, false, {})
 	vim.cmd("redraw!")
+end
+
+local function win_show_indicators(_, buf_nr, first_line, last_line, label)
+	vim.api.nvim_buf_set_extmark(buf_nr, namespace, first_line - 1, 0, {
+		virt_text = { { label, "SjLimitReached" } },
+		virt_text_pos = "overlay",
+		virt_text_win_col = -1,
+	})
+	vim.api.nvim_buf_set_extmark(buf_nr, namespace, first_line - 1, 0, {
+		virt_text = { { label, "SjLimitReached" } },
+		virt_text_pos = "right_align",
+	})
+	vim.api.nvim_buf_set_extmark(buf_nr, namespace, last_line - 1, 0, {
+		virt_text = { { label, "SjLimitReached" } },
+		virt_text_pos = "overlay",
+		virt_text_win_col = -1,
+	})
+	vim.api.nvim_buf_set_extmark(buf_nr, namespace, last_line - 1, 0, {
+		virt_text = { { label, "SjLimitReached" } },
+		virt_text_pos = "right_align",
+	})
+	vim.cmd("redraw")
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -174,6 +197,22 @@ function M.cancel_highlights_timer()
 		pcall(vim.loop.timer_stop, clear_timer)
 		pcall(vim.loop.timer_close, clear_timer)
 	end
+end
+
+function M.multi_win_show_indicators(wins_list, wins_ctxt)
+	local c
+	utils.multi_win_call(wins_list, function(win_id)
+		c = wins_ctxt[win_id]
+		win_show_indicators(win_id, c.buf_nr, c.first_line, c.last_line, c.label)
+	end)
+end
+
+function M.multi_win_hide_indicators(wins_list, wins_ctxt)
+	local c
+	utils.multi_win_call(wins_list, function(win_id)
+		c = wins_ctxt[win_id]
+		clear_highlights(c.buf_nr)
+	end)
 end
 
 return M

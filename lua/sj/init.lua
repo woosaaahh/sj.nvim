@@ -26,6 +26,13 @@ function M.run(opts)
 	end
 
 	cache.options = vim.tbl_deep_extend("force", cache.defaults, config.filter_options(opts or {}))
+
+	if cache.options.select_window == true then
+		if not core.select_window() then
+			return
+		end
+	end
+
 	local user_input, labels_map = core.get_user_input()
 	core.extract_range_and_jump_to(user_input, labels_map)
 end
@@ -82,6 +89,10 @@ function M.next_match()
 	core.focus_label(1, matches)
 
 	cache.options.relative_labels = relative_labels
+end
+
+function M.select_window()
+	return core.select_window()
 end
 
 return M
