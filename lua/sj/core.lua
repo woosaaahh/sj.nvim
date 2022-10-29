@@ -334,7 +334,9 @@ function M.get_user_input()
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
 	local win_id = vim.api.nvim_get_current_win()
+	local buf_nr = vim.api.nvim_win_get_buf(win_id)
 	local cursor_pos = vim.api.nvim_win_get_cursor(win_id)
+
 	local search_opts = {
 		cursor_pos = cursor_pos, -- needed here to avoid "sliding matches" while typing the pattern
 		forward = cache.options.forward_search,
@@ -359,7 +361,7 @@ function M.get_user_input()
 
 	if need_looping == true then
 		labels_map = M.create_labels_map(cache.options.labels, matches, false)
-		ui.show_feedbacks(pattern, matches, labels_map)
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map)
 	end
 
 	while need_looping == true do
@@ -406,7 +408,7 @@ function M.get_user_input()
 		labels_map = M.create_labels_map(cache.options.labels, matches, false)
 
 		M.focus_label(cache.state.label_index, matches)
-		ui.show_feedbacks(pattern, matches, labels_map)
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map)
 
 		if #matches > 0 then
 			last_matching_pattern = pattern
@@ -422,7 +424,7 @@ function M.get_user_input()
 
 		---
 	end
-	ui.clear_feedbacks()
+	ui.clear_feedbacks(buf_nr)
 
 	cache.state.last_used_pattern = pattern
 	update_search_history(pattern)

@@ -66,6 +66,7 @@ function M.next_match()
 	cache.options.relative_labels = true
 
 	local win_id = vim.api.nvim_get_current_win()
+	local buf_nr = vim.api.nvim_win_get_buf(win_id)
 	local search_opts = {
 		forward = cache.options.forward_search,
 		pattern_type = cache.options.pattern_type,
@@ -77,7 +78,7 @@ function M.next_match()
 	local labels_map = core.create_labels_map(cache.options.labels, matches, false)
 
 	ui.cancel_highlights_timer()
-	ui.highlight_matches(labels_map, pattern, false)
+	ui.highlight_matches(buf_nr, labels_map, pattern, false)
 	core.focus_label(1, matches)
 
 	cache.options.relative_labels = relative_labels
