@@ -85,6 +85,7 @@ local config = {
   forward_search = true, -- if true, the search will be done from top to bottom
   highlights_timeout = 0, -- if > 0, wait for 'updatetime' + N ms to clear hightlights (sj.prev_match/sj.next_match)
   max_pattern_length = 0, -- if > 0, wait for a label after N characters
+  multi_windows = false, -- if true, the search will be done in all visible lines of all windows
   pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
   preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
   prompt_prefix = "", -- if set, the string will be used as a prefix in the command line
@@ -179,7 +180,7 @@ vim.keymap.set({ "n", "o", "x" }, "s", function()
   sj.run()
 end)
 
-vim.keymap.set({ "n", "o", "x" }, "<A-s>", function()
+vim.keymap.set({ "n", "o", "x" }, "gs", function()
 	vim.fn.setpos("''", vim.fn.getpos("."))
 	sj.run({ multi_windows = true })
 end)
@@ -193,7 +194,7 @@ end)
 
 --- buffer --------------------------------------------
 
-vim.keymap.set("n", "gS", function()
+vim.keymap.set("n", "<A-s>", function()
   vim.fn.setpos("''", vim.fn.getpos("."))
   sj.run({
     forward_search = false,
@@ -202,7 +203,7 @@ vim.keymap.set("n", "gS", function()
   })
 end)
 
-vim.keymap.set("n", "gs", function()
+vim.keymap.set("n", "<A-S>", function()
   vim.fn.setpos("''", vim.fn.getpos("."))
   sj.run({
     search_scope = "buffer",
