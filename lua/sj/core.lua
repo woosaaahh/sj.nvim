@@ -76,9 +76,9 @@ local function update_search_history(pattern)
 	local last_pattern = pattern
 	local new_search_history = {}
 
-	for _, pattern in ipairs(search_history) do
-		if pattern ~= last_pattern then
-			table.insert(new_search_history, pattern)
+	for _, curr_pattern in ipairs(search_history) do
+		if curr_pattern ~= last_pattern then
+			table.insert(new_search_history, curr_pattern)
 		end
 	end
 
@@ -177,7 +177,7 @@ function M.jump_to(range)
 	end
 end
 
-function M.extract_range_and_jump_to(user_input, labels_map)
+function M.extract_range_and_jump_to(user_input, labels_map, win_id)
 	if type(user_input) ~= "string" or type(labels_map) ~= "table" then
 		return
 	end
@@ -188,10 +188,19 @@ function M.extract_range_and_jump_to(user_input, labels_map)
 		label = cache.options.labels[1]
 	end
 
-	M.jump_to(labels_map[label])
+
+	local range = labels_map[label]
+	if type(range) ~= "table" then
+		return
+	end
+
+	if type(win_id) == "number" and vim.api.nvim_win_is_valid(win_id) then
+		vim.api.nvim_set_current_win(win_id)
+	end
+	M.jump_to(range)
 end
 
-function M.focus_label(label_index, matches)
+function M.focus_label(label_index, matches, do_jump)
 	if type(label_index) ~= "number" then
 		label_index = 1
 	end
@@ -210,7 +219,9 @@ function M.focus_label(label_index, matches)
 	end
 
 	cache.state.label_index = label_index
-	M.jump_to(match_range)
+	if do_jump ~= false then
+		M.jump_to(match_range)
+	end
 end
 
 function M.win_get_lines_range(win_id, scope)
@@ -229,7 +240,7 @@ function M.win_get_lines_range(win_id, scope)
 	return unpack(cases[scope] or cases["visible_lines"])
 end
 
-function M.create_labels_map(labels, matches, reverse)
+function M.create_labels_map(labels, matches, extra)
 	local label
 	local labels_map = {}
 
@@ -239,11 +250,8 @@ function M.create_labels_map(labels, matches, reverse)
 			break
 		end
 
-		if reverse == true then
-			labels_map[label] = matches[#matches + 1 - match_num]
-		else
-			labels_map[label] = matches[match_num]
-		end
+		label = type(extra) == "string" and (label .. extra) or label
+		labels_map[label] = matches[match_num]
 	end
 
 	return labels_map
@@ -325,6 +333,23 @@ function M.win_find_pattern(win_id, pattern, opts)
 	return matches
 end
 
+local function win_get_context(win_id)
+	local first_line, last_line = M.win_get_lines_range(win_id, "visible_lines")
+	return {
+		win_id = win_id,
+		buf_nr = vim.api.nvim_win_get_buf(win_id),
+		first_line = first_line,
+		last_line = last_line,
+		search_opts = {
+			cursor_pos = vim.api.nvim_win_get_cursor(win_id),
+			forward_search = cache.options.forward_search,
+			pattern_type = cache.options.pattern_type,
+			relative_labels = cache.options.relative_labels,
+			scope = cache.options.search_scope,
+		},
+	}
+end
+
 function M.get_user_input()
 	local keynum, ok, char
 	local user_input = ""
@@ -332,6 +357,23 @@ function M.get_user_input()
 	local matches, labels_map = {}, {}
 	local need_looping = true
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
+
+	local multi_wins = cache.options.multi_windows == true
+
+	local wins_list
+	if multi_wins == true then
+		wins_list = utils.tab_list_wins(0)
+	else
+		wins_list = { vim.api.nvim_get_current_win() }
+	end
+	local wins_ctxt = utils.multi_win_call(wins_list, win_get_context)
+
+	local wins_labels = {}
+	for idx, win_id in ipairs(wins_list) do
+		local win_label = cache.options.labels[idx]
+		wins_labels[win_label] = win_id
+		wins_ctxt[win_id].label = win_label
+	end
 
 	local win_id = vim.api.nvim_get_current_win()
 	local buf_nr = vim.api.nvim_win_get_buf(win_id)
@@ -352,7 +394,7 @@ function M.get_user_input()
 		user_input = cache.state.last_used_pattern
 		pattern = cache.state.last_used_pattern
 		matches = M.win_find_pattern(win_id, user_input, search_opts)
-		M.focus_label(cache.state.label_index, matches)
+		M.focus_label(cache.state.label_index, matches, cache.options.search_scope == "buffer")
 	end
 
 	if cache.options.auto_jump and #matches == 1 then
@@ -404,27 +446,52 @@ function M.get_user_input()
 		--- matches
 
 		pattern, label = extract_pattern_and_label(user_input, cache.options.separator)
-		matches = M.win_find_pattern(win_id, pattern, search_opts)
-		labels_map = M.create_labels_map(cache.options.labels, matches, false)
 
-		M.focus_label(cache.state.label_index, matches)
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map)
+		if multi_wins then
+			for _, _win_id in ipairs(wins_list) do
+				local _buf_nr = wins_ctxt[_win_id].buf_nr
+				local _search_opts = wins_ctxt[_win_id].search_opts
+				local _matches = M.win_find_pattern(_win_id, pattern, _search_opts)
+				local _labels_map = M.create_labels_map(cache.options.labels, _matches, wins_ctxt[_win_id].label)
+
+				local _fline, _lline = wins_ctxt[_win_id].first_line, wins_ctxt[_win_id].last_line
+				vim.api.nvim_buf_clear_namespace(_buf_nr, ui.namespace, _fline - 1, _lline)
+				ui.show_feedbacks(_buf_nr, pattern, _matches, _labels_map)
+
+				if _win_id == win_id then
+					matches = _matches
+					labels_map = _labels_map
+				end
+				wins_ctxt[_win_id].matches = _matches
+				wins_ctxt[_win_id].labels_map = _labels_map
+			end
+		else
+			matches = M.win_find_pattern(win_id, pattern, search_opts)
+			labels_map = M.create_labels_map(cache.options.labels, matches, false)
+			vim.api.nvim_buf_clear_namespace(buf_nr, ui.namespace, 0, -1)
+			M.focus_label(cache.state.label_index, matches, cache.options.search_scope == "buffer")
+			ui.show_feedbacks(buf_nr, pattern, matches, labels_map)
+		end
+
+		vim.cmd("redraw")
 
 		if #matches > 0 then
 			last_matching_pattern = pattern
 		end
 
-		if #pattern > 0 and #label > 0 then
+		if #pattern > 0 and ((not multi_wins and #label == 1) or (multi_wins and #label == 2)) then
 			break
 		end
 
 		if cache.options.auto_jump and #matches == 1 then
 			break
 		end
-
-		---
 	end
-	ui.clear_feedbacks(buf_nr)
+
+	utils.multi_win_call(wins_list, function(_win_id)
+		vim.api.nvim_buf_clear_namespace(wins_ctxt[_win_id].buf_nr, ui.namespace, 0, -1)
+	end)
+	ui.echo_pattern(nil, {})
 
 	cache.state.last_used_pattern = pattern
 	update_search_history(pattern)
@@ -438,16 +505,21 @@ function M.get_user_input()
 		return
 	end
 
-	if
-		char == keymaps.validate
-		or keynum == keymaps.validate
-		or char == keymaps.send_to_qflist
-		or keynum == keymaps.send_to_qflist
-	then
+	if char == keymaps.validate or keynum == keymaps.validate then
+		M.jump_to(labels_map[cache.options.labels[cache.state.label_index]])
 		return
 	end
 
-	return user_input, labels_map
+	if char == keymaps.send_to_qflist or keynum == keymaps.send_to_qflist then
+		return
+	end
+
+	if multi_wins and #label == 2 then
+		win_id = wins_labels[label:sub(-1)]
+		labels_map = type(wins_ctxt[win_id]) == "table" and wins_ctxt[win_id].labels_map or {}
+	end
+
+	return user_input, labels_map, win_id
 end
 
 function M.select_window()

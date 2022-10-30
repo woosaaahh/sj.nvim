@@ -14,7 +14,9 @@ local hl_group_links = {
 	SjOverlay = "Comment",
 }
 
-local M = {}
+local M = {
+	namespace = namespace,
+}
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -63,22 +65,6 @@ local function apply_overlay(buf_nr, redraw)
 	if redraw ~= false then
 		vim.cmd.redraw()
 	end
-end
-
-local function echo_pattern(pattern, matches)
-	local highlight = ""
-	if pattern ~= nil and #pattern > 0 and type(matches) == "table" and #matches < 1 then
-		highlight = "SjNoMatches"
-	end
-
-	if pattern ~= nil and type(cache.options.prompt_prefix) == "string" then
-		pattern = cache.options.prompt_prefix .. pattern
-	else
-		pattern = ""
-	end
-
-	vim.api.nvim_echo({ { pattern, highlight } }, false, {})
-	vim.cmd("redraw!")
 end
 
 local function win_show_indicators(_, buf_nr, first_line, last_line, label)
@@ -151,7 +137,7 @@ function M.highlight_matches(buf_nr, labels_map, pattern, show_labels)
 	end
 	local last_label_highlight = label_highlight
 
-	clear_highlights(buf_nr)
+	-- clear_highlights(buf_nr)
 	apply_overlay(buf_nr, false) -- redrawing here would cause flickering
 
 	for label, match_range in pairs(labels_map) do
@@ -175,20 +161,36 @@ function M.highlight_matches(buf_nr, labels_map, pattern, show_labels)
 		end
 	end
 
-	vim.cmd.redraw()
+	-- vim.cmd.redraw()
+end
+
+function M.echo_pattern(pattern, matches)
+	local highlight = ""
+	if pattern ~= nil and #pattern > 0 and type(matches) == "table" and #matches < 1 then
+		highlight = "SjNoMatches"
+	end
+
+	if pattern ~= nil and type(cache.options.prompt_prefix) == "string" then
+		pattern = cache.options.prompt_prefix .. pattern
+	else
+		pattern = ""
+	end
+
+	vim.api.nvim_echo({ { pattern, highlight } }, false, {})
+	vim.cmd("redraw!")
 end
 
 function M.show_feedbacks(buf_nr, pattern, matches, labels_map)
 	buf_nr = valid_buf_nr(buf_nr) and buf_nr or 0
 	apply_overlay(buf_nr)
 	M.highlight_matches(buf_nr, labels_map, pattern)
-	echo_pattern(pattern, matches)
+	M.echo_pattern(pattern, matches)
 end
 
 function M.clear_feedbacks(buf_nr)
 	buf_nr = valid_buf_nr(buf_nr) and buf_nr or 0
 	clear_highlights(buf_nr)
-	echo_pattern(nil, {})
+	M.echo_pattern(nil, {})
 	vim.cmd("redraw!")
 end
 

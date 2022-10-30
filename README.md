@@ -179,6 +179,11 @@ vim.keymap.set({ "n", "o", "x" }, "s", function()
   sj.run()
 end)
 
+vim.keymap.set({ "n", "o", "x" }, "<A-s>", function()
+	vim.fn.setpos("''", vim.fn.getpos("."))
+	sj.run({ multi_windows = true })
+end)
+
 vim.keymap.set("n", "<localleader>c", function()
   sj.run({
     max_pattern_length = 1,

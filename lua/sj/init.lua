@@ -33,8 +33,8 @@ function M.run(opts)
 		end
 	end
 
-	local user_input, labels_map = core.get_user_input()
-	core.extract_range_and_jump_to(user_input, labels_map)
+	local user_input, labels_map, win_id = core.get_user_input()
+	core.extract_range_and_jump_to(user_input, labels_map, win_id)
 end
 
 function M.redo(opts)
@@ -46,8 +46,8 @@ function M.redo(opts)
 	opts.use_last_pattern = true
 
 	cache.options = vim.tbl_deep_extend("force", cache.options, config.filter_options(opts))
-	local user_input, labels_map = core.get_user_input()
-	core.extract_range_and_jump_to(user_input, labels_map)
+	local user_input, labels_map, win_id = core.get_user_input()
+	core.extract_range_and_jump_to(user_input, labels_map, win_id)
 end
 
 function M.prev_match()
