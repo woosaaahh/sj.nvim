@@ -168,19 +168,19 @@ end)
 
 --- visible lines -------------------------------------
 
-vim.keymap.set({ "n", "o", "x" }, "S", function()
+vim.keymap.set("n", "S", function()
   vim.fn.setpos("''", vim.fn.getpos("."))
   sj.run({
     forward_search = false,
   })
 end)
 
-vim.keymap.set({ "n", "o", "x" }, "s", function()
+vim.keymap.set("n", "s", function()
   vim.fn.setpos("''", vim.fn.getpos("."))
   sj.run()
 end)
 
-vim.keymap.set({ "n", "o", "x" }, "gs", function()
+vim.keymap.set("n", "gs", function()
   vim.fn.setpos("''", vim.fn.getpos("."))
   sj.run({ multi_windows = true })
 end)
@@ -213,7 +213,7 @@ end)
 
 --- current line --------------------------------------
 
-vim.keymap.set({ "n", "o", "x" }, "<localleader>l", function()
+vim.keymap.set("n", "<localleader>l", function()
   sj.run({
     auto_jump = true,
     max_pattern_length = 1,
