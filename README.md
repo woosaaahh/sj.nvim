@@ -159,11 +159,11 @@ sj.setup({
 --- Keymaps ------------------------------------------------------------------------------
 
 vim.keymap.set("n", "!", function()
-	sj.run({ select_window = true })
+  sj.run({ select_window = true })
 end)
 
 vim.keymap.set("n", "<A-!>", function()
-	sj.select_window()
+  sj.select_window()
 end)
 
 --- visible lines -------------------------------------
@@ -181,8 +181,8 @@ vim.keymap.set({ "n", "o", "x" }, "s", function()
 end)
 
 vim.keymap.set({ "n", "o", "x" }, "gs", function()
-	vim.fn.setpos("''", vim.fn.getpos("."))
-	sj.run({ multi_windows = true })
+  vim.fn.setpos("''", vim.fn.getpos("."))
+  sj.run({ multi_windows = true })
 end)
 
 vim.keymap.set("n", "<localleader>c", function()
@@ -256,7 +256,7 @@ vim.keymap.set("n", "<localleader>s", function()
     max_pattern_length = 1,
   })
 end)
-```	
+```  
 
 **DISCLAIMER** : This plugin is not intended to replace the native functions of Neovim. 
 <br>I do not recommend adding keymaps that replaces `/, ?, f/F, t/T...`.
