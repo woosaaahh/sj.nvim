@@ -188,7 +188,6 @@ function M.extract_range_and_jump_to(user_input, labels_map, win_id)
 		label = cache.options.labels[1]
 	end
 
-
 	local range = labels_map[label]
 	if type(range) ~= "table" then
 		return
@@ -359,6 +358,7 @@ function M.get_user_input()
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
 	local multi_wins = cache.options.multi_windows == true
+	local sep = cache.options.separator
 
 	local wins_list
 	if multi_wins == true then
@@ -437,7 +437,12 @@ function M.get_user_input()
 				send_to_qflist(matches)
 				break
 			elseif cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
-				user_input = user_input .. cache.options.separator .. char
+				local ends_with_label = user_input:find(sep .. ".$")
+				if multi_wins == true and ends_with_label then
+					user_input = user_input .. char
+				elseif multi_wins == false or not ends_with_label then
+					user_input = user_input .. sep .. char
+				end
 			else
 				user_input = user_input .. char
 			end
@@ -445,7 +450,7 @@ function M.get_user_input()
 
 		--- matches
 
-		pattern, label = extract_pattern_and_label(user_input, cache.options.separator)
+		pattern, label = extract_pattern_and_label(user_input, sep)
 
 		if multi_wins then
 			for _, _win_id in ipairs(wins_list) do
