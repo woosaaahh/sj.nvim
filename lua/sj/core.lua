@@ -169,7 +169,7 @@ function M.extract_range_and_jump_to(user_input, labels_map)
 	M.jump_to(labels_map[label])
 end
 
-function M.focus_label(label_index, matches)
+function M.focus_label(label_index, matches, do_jump)
 	if type(label_index) ~= "number" then
 		label_index = 1
 	end
@@ -188,7 +188,9 @@ function M.focus_label(label_index, matches)
 	end
 
 	cache.state.label_index = label_index
-	M.jump_to(match_range)
+	if do_jump ~= false then
+		M.jump_to(match_range)
+	end
 end
 
 function M.win_get_lines_range(win_id, scope)
@@ -330,7 +332,7 @@ function M.get_user_input()
 		user_input = cache.state.last_used_pattern
 		pattern = cache.state.last_used_pattern
 		matches = M.win_find_pattern(win_id, user_input, search_opts)
-		M.focus_label(cache.state.label_index, matches)
+		M.focus_label(cache.state.label_index, matches, cache.options.search_scope == "buffer")
 	end
 
 	if cache.options.auto_jump and #matches == 1 then
@@ -385,7 +387,7 @@ function M.get_user_input()
 		matches = M.win_find_pattern(win_id, pattern, search_opts)
 		labels_map = M.create_labels_map(cache.options.labels, matches, false)
 
-		M.focus_label(cache.state.label_index, matches)
+		M.focus_label(cache.state.label_index, matches, cache.options.search_scope == "buffer")
 		ui.show_feedbacks(buf_nr, pattern, matches, labels_map)
 
 		if #matches > 0 then
@@ -416,12 +418,12 @@ function M.get_user_input()
 		return
 	end
 
-	if
-		char == keymaps.validate
-		or keynum == keymaps.validate
-		or char == keymaps.send_to_qflist
-		or keynum == keymaps.send_to_qflist
-	then
+	if char == keymaps.validate or keynum == keymaps.validate then
+		M.jump_to(labels_map[cache.options.labels[cache.state.label_index]])
+		return
+	end
+
+	if char == keymaps.send_to_qflist or keynum == keymaps.send_to_qflist then
 		return
 	end
 
