@@ -1,4 +1,5 @@
 local cache = require("sj.cache")
+local history = require("sj.history")
 local ui = require("sj.ui")
 local utils = require("sj.utils")
 
@@ -18,8 +19,7 @@ local keymaps = {
 	send_to_qflist = vim.api.nvim_replace_termcodes("<A-q>", true, false, true),
 }
 
-local search_history = {}
-local pattern_index = #search_history + 1
+local patterns = history.new()
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -56,34 +56,12 @@ local function send_to_qflist(matches)
 	vim.fn.setqflist(qf_list)
 end
 
-local function get_prev_pattern()
-	pattern_index = pattern_index <= 1 and 1 or pattern_index - 1
-	return search_history[pattern_index]
-end
-
-local function get_next_pattern()
-	pattern_index = pattern_index >= #search_history and #search_history or pattern_index + 1
-	return search_history[pattern_index]
-end
-
-local function update_search_history(pattern)
+local function update_search_history(current_patterns, pattern)
 	if type(pattern) ~= "string" or #pattern == 0 then
-		return
+		return current_patterns
 	end
 
-	table.insert(search_history, pattern)
-
-	local last_pattern = pattern
-	local new_search_history = {}
-
-	for _, pattern in ipairs(search_history) do
-		if pattern ~= last_pattern then
-			table.insert(new_search_history, pattern)
-		end
-	end
-
-	table.insert(new_search_history, last_pattern)
-	search_history = new_search_history
+	return current_patterns:insert_uniq(pattern)
 end
 
 local function pattern_ranges(text, pattern, search)
@@ -346,7 +324,7 @@ function M.get_user_input()
 	}
 
 	cache.state.label_index = 1
-	pattern_index = #search_history + 1
+	patterns:seek(#patterns + 1)
 
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
 		user_input = cache.state.last_used_pattern
@@ -384,9 +362,9 @@ function M.get_user_input()
 			elseif char == keymaps.delete_pattern or keynum == keymaps.delete_pattern then
 				user_input = ""
 			elseif char == keymaps.prev_pattern or keynum == keymaps.prev_pattern then
-				user_input = get_prev_pattern()
+				user_input = patterns:previous()
 			elseif char == keymaps.next_pattern or keynum == keymaps.next_pattern then
-				user_input = get_next_pattern()
+				user_input = patterns:next()
 			elseif char == keymaps.prev_match or keynum == keymaps.prev_match then
 				cache.state.label_index = cache.state.label_index - 1
 			elseif char == keymaps.next_match or keynum == keymaps.next_match then
@@ -427,7 +405,7 @@ function M.get_user_input()
 	ui.clear_feedbacks(buf_nr)
 
 	cache.state.last_used_pattern = pattern
-	update_search_history(pattern)
+	patterns = update_search_history(patterns, pattern)
 
 	if cache.options.update_search_register == true then
 		update_search_register(cache.state.last_used_pattern, cache.options.pattern_type)
