@@ -204,7 +204,7 @@ function M.discard_labels(labels, matches)
 
 	for _, match_range in pairs(matches) do
 		next_chars = match_range[#match_range]
-		if not discardable[next_chars] then
+		if #next_chars > 0 and not discardable[next_chars] then
 			discardable[next_chars] = true
 		end
 	end
