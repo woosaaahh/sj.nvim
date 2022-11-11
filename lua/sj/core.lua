@@ -21,8 +21,6 @@ local keymaps = {
 local patterns = {}
 local patterns_slider = utils.slider()
 
-local labels_slider = utils.slider(nil, true)
-
 ------------------------------------------------------------------------------------------------------------------------
 
 local function update_search_register(pattern, pattern_type)
@@ -312,7 +310,9 @@ function M.get_user_input()
 		scope = cache.options.search_scope,
 	}
 
+	local labels_slider = utils.slider(nil, true)
 	labels_slider.move(1)
+
 	patterns_slider.move(#patterns + 1)
 
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
