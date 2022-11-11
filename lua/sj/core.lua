@@ -194,9 +194,44 @@ function M.win_get_lines_range(win_id, scope)
 	return unpack(cases[scope] or cases["visible_lines"])
 end
 
+function M.discard_labels(labels, matches)
+	if type(matches) ~= "table" or #matches == 0 then
+		return labels
+	end
+
+	local next_chars
+	local discardable= {}
+
+	for _, match_range in pairs(matches) do
+		next_chars = match_range[#match_range]
+		if not discardable[next_chars] then
+			discardable[next_chars] = true
+		end
+	end
+
+	if next(discardable) == nil then
+		return labels
+	end
+
+	discardable = vim.tbl_keys(discardable)
+	table.sort(discardable)
+	local discardable_rx = "[" .. vim.pesc(table.concat(discardable)) .. "]"
+	local filtered_labels = {}
+
+	for _, label in ipairs(labels) do
+		if not label:match(discardable_rx) then
+			table.insert(filtered_labels, label)
+		end
+	end
+
+	return filtered_labels
+end
+
 function M.create_labels_map(labels, matches, reverse)
 	local label
 	local labels_map = {}
+
+	labels = M.discard_labels(labels, matches)
 
 	for match_num, _ in pairs(matches) do
 		label = labels[match_num]
@@ -243,7 +278,7 @@ function M.win_find_pattern(win_id, pattern, opts)
 	local forward = opts.forward == true
 	local relative = opts.relative == true
 
-	local match_lnum, match_col, match_end_col
+	local match_lnum, match_col, match_end_col, match_next_chars
 	local prev_matches, next_matches = {}, {}
 
 	for i, line in ipairs(lines) do
@@ -253,7 +288,8 @@ function M.win_find_pattern(win_id, pattern, opts)
 		if ok then
 			for _, match_range in ipairs(ranges) do
 				match_lnum, match_col, match_end_col = first_line - 1 + i, unpack(match_range)
-				match_range = { match_lnum - 1, match_col, match_end_col }
+				match_next_chars = line:sub(match_col + 1, match_end_col + 1)
+				match_range = { match_lnum - 1, match_col, match_end_col, match_next_chars }
 
 				--- prev matches
 				if match_lnum < cursor_lnum then
