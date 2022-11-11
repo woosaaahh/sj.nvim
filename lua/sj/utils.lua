@@ -97,4 +97,52 @@ function M.multi_win_call(wins_list, func, ...)
 	return results
 end
 
+function M.slider(max, wrap)
+	max = (type(max) == "number" and max > 0) and max or 1
+	wrap = type(wrap) == "boolean" and wrap or false
+
+	local s = { max = max, pos = 0 }
+	local slider = {}
+
+	function slider.prev()
+		if s.pos > 1 then
+			s.pos = s.pos - 1
+		else
+			s.pos = wrap == true and s.max or 1
+		end
+		return s.pos
+	end
+
+	function slider.next()
+		if s.pos < s.max then
+			s.pos = s.pos + 1
+		else
+			s.pos = wrap == true and 1 or s.max
+		end
+		return s.pos
+	end
+
+	function slider.move(pos)
+		if type(pos) == "number" and pos >= 0 and pos <= s.max + 1 then
+			s.pos = pos
+		end
+		return s.pos
+	end
+
+	function slider.set_max(new_max)
+		if type(new_max) == "number" and new_max > 1 then
+			s.max = new_max
+			s.pos = s.pos > new_max and new_max or s.pos
+		end
+		return s.max
+	end
+
+	return setmetatable(slider, {
+		__index = function(_, k)
+			return s[k]
+		end,
+		__newindex = function() end,
+	})
+end
+
 return M

@@ -1,5 +1,4 @@
 local cache = require("sj.cache")
-local history = require("sj.history")
 local ui = require("sj.ui")
 local utils = require("sj.utils")
 
@@ -19,7 +18,8 @@ local keymaps = {
 	send_to_qflist = vim.api.nvim_replace_termcodes("<A-q>", true, false, true),
 }
 
-local patterns = history.new()
+local patterns = {}
+local patterns_slider = utils.slider()
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -56,12 +56,21 @@ local function send_to_qflist(matches)
 	vim.fn.setqflist(qf_list)
 end
 
-local function update_search_history(current_patterns, pattern)
-	if type(pattern) ~= "string" or #pattern == 0 then
+local function update_search_history(current_patterns, new_pattern)
+	if type(new_pattern) ~= "string" or #new_pattern == 0 then
 		return current_patterns
 	end
 
-	return current_patterns:insert_uniq(pattern)
+	local new_patterns = {}
+
+	for _, pattern in pairs(current_patterns) do
+		if pattern ~= new_pattern then
+			table.insert(new_patterns, pattern)
+		end
+	end
+	table.insert(new_patterns, new_pattern)
+
+	return new_patterns
 end
 
 local function pattern_ranges(text, pattern, search)
@@ -326,7 +335,7 @@ function M.get_user_input()
 	}
 
 	cache.state.label_index = 1
-	patterns:seek(#patterns + 1)
+	patterns_slider.move(#patterns + 1)
 
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
 		user_input = cache.state.last_used_pattern
@@ -364,9 +373,9 @@ function M.get_user_input()
 			elseif char == keymaps.delete_pattern or keynum == keymaps.delete_pattern then
 				user_input = ""
 			elseif char == keymaps.prev_pattern or keynum == keymaps.prev_pattern then
-				user_input = patterns:previous()
+				user_input = patterns[patterns_slider.prev()]
 			elseif char == keymaps.next_pattern or keynum == keymaps.next_pattern then
-				user_input = patterns:next()
+				user_input = patterns[patterns_slider.next()]
 			elseif char == keymaps.prev_match or keynum == keymaps.prev_match then
 				cache.state.label_index = cache.state.label_index - 1
 			elseif char == keymaps.next_match or keynum == keymaps.next_match then
@@ -408,6 +417,7 @@ function M.get_user_input()
 
 	cache.state.last_used_pattern = pattern
 	patterns = update_search_history(patterns, pattern)
+	patterns_slider.set_max(#patterns)
 
 	if cache.options.update_search_register == true then
 		update_search_register(cache.state.last_used_pattern, cache.options.pattern_type)
