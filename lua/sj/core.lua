@@ -288,7 +288,7 @@ function M.win_find_pattern(win_id, pattern, opts)
 		if ok then
 			for _, match_range in ipairs(ranges) do
 				match_lnum, match_col, match_end_col = first_line - 1 + i, unpack(match_range)
-				match_next_chars = line:sub(match_col + 1, match_end_col + 1)
+				match_next_chars = line:sub(match_end_col + 1, match_end_col + 1)
 				match_range = { match_lnum - 1, match_col, match_end_col, match_next_chars }
 
 				--- prev matches
