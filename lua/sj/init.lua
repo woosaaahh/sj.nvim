@@ -86,7 +86,7 @@ function M.next_match()
 
 	ui.cancel_highlights_timer()
 	ui.highlight_matches(buf_nr, labels_map, pattern, false)
-	core.focus_label(1, matches)
+	core.jump_to(matches[1])
 
 	cache.options.relative_labels = relative_labels
 end

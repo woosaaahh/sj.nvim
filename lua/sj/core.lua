@@ -21,6 +21,8 @@ local keymaps = {
 local patterns = {}
 local patterns_slider = utils.slider()
 
+local labels_slider = utils.slider(nil, true)
+
 ------------------------------------------------------------------------------------------------------------------------
 
 local function update_search_register(pattern, pattern_type)
@@ -178,30 +180,6 @@ function M.extract_range_and_jump_to(user_input, labels_map)
 	M.jump_to(labels_map[label])
 end
 
-function M.focus_label(label_index, matches, do_jump)
-	if type(label_index) ~= "number" then
-		label_index = 1
-	end
-
-	local wrap_jumps = cache.options.wrap_jumps == true
-	local match_range = {}
-
-	if label_index <= 0 then
-		label_index = wrap_jumps and #matches or 1
-		match_range = matches[label_index]
-	elseif label_index > #matches then
-		label_index = wrap_jumps and 1 or #matches
-		match_range = matches[label_index]
-	else
-		match_range = matches[label_index]
-	end
-
-	cache.state.label_index = label_index
-	if do_jump ~= false then
-		M.jump_to(match_range)
-	end
-end
-
 function M.win_get_lines_range(win_id, scope)
 	local cursor_line = vim.fn.line(".", win_id)
 	local first_visible_line, last_visible_line = vim.fn.line("w0", win_id), vim.fn.line("w$", win_id)
@@ -334,14 +312,17 @@ function M.get_user_input()
 		scope = cache.options.search_scope,
 	}
 
-	cache.state.label_index = 1
+	labels_slider.move(1)
 	patterns_slider.move(#patterns + 1)
 
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
 		user_input = cache.state.last_used_pattern
 		pattern = cache.state.last_used_pattern
 		matches = M.win_find_pattern(win_id, user_input, search_opts)
-		M.focus_label(cache.state.label_index, matches, cache.options.search_scope == "buffer")
+		labels_slider.set_max(#matches)
+		if cache.options.search_scope == "buffer" then
+			M.jump_to(matches[1])
+		end
 	end
 
 	if cache.options.auto_jump and #matches == 1 then
@@ -350,7 +331,7 @@ function M.get_user_input()
 
 	if need_looping == true then
 		labels_map = M.create_labels_map(cache.options.labels, matches, false)
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map)
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, cache.options.labels[labels_slider.pos])
 	end
 
 	while need_looping == true do
@@ -377,9 +358,9 @@ function M.get_user_input()
 			elseif char == keymaps.next_pattern or keynum == keymaps.next_pattern then
 				user_input = patterns[patterns_slider.next()]
 			elseif char == keymaps.prev_match or keynum == keymaps.prev_match then
-				cache.state.label_index = cache.state.label_index - 1
+				cache.state.label_index = labels_slider.prev()
 			elseif char == keymaps.next_match or keynum == keymaps.next_match then
-				cache.state.label_index = cache.state.label_index + 1
+				cache.state.label_index = labels_slider.next()
 			elseif char == keymaps.send_to_qflist or keynum == keymaps.send_to_qflist then
 				send_to_qflist(matches)
 				break
@@ -395,9 +376,12 @@ function M.get_user_input()
 		pattern, label = extract_pattern_and_label(user_input, cache.options.separator)
 		matches = M.win_find_pattern(win_id, pattern, search_opts)
 		labels_map = M.create_labels_map(cache.options.labels, matches, false)
+		labels_slider.set_max(#matches)
 
-		M.focus_label(cache.state.label_index, matches, cache.options.search_scope == "buffer")
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map)
+		if cache.options.search_scope == "buffer" then
+			M.jump_to(matches[labels_slider.pos])
+		end
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, cache.options.labels[labels_slider.pos])
 
 		if #matches > 0 then
 			last_matching_pattern = pattern
@@ -429,7 +413,7 @@ function M.get_user_input()
 	end
 
 	if char == keymaps.validate or keynum == keymaps.validate then
-		M.jump_to(labels_map[cache.options.labels[cache.state.label_index]])
+		M.jump_to(labels_map[cache.options.labels[labels_slider.pos]])
 		return
 	end
 
