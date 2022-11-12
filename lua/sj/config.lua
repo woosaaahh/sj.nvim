@@ -70,7 +70,7 @@ local checks = {
 	relative_labels = { func = is_boolean, message = "must be a boolean" },
 	search_scope = { func = is_string, message = "must be a string" },
 	select_window = { func = is_boolean, message = "must be a boolean" },
-	separator = { func = is_char, message = "must be a character" },
+	separator = { func = is_string, message = "must be a string" },
 	update_search_register = { func = is_boolean, message = "must be a boolean" },
 	use_overlay = { func = is_boolean, message = "must be a boolean" },
 	use_last_pattern = { func = is_boolean, message = "must be a boolean" },
