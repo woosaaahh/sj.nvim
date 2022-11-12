@@ -129,7 +129,9 @@ local function get_search_function(pattern_type)
 end
 
 local function extract_pattern_and_label(user_input, separator)
-	if type(separator) ~= "string" then
+	if separator == "" then
+		return user_input, ""
+	elseif type(separator) ~= "string" then
 		separator = ":"
 	end
 	local separator_pos = user_input:match("^.*()" .. vim.pesc(separator))
@@ -194,6 +196,39 @@ function M.win_get_lines_range(win_id, scope)
 	return unpack(cases[scope] or cases["visible_lines"])
 end
 
+function M.discard_labels(labels, matches)
+	if type(matches) ~= "table" or #matches == 0 then
+		return labels
+	end
+
+	local next_chars
+	local discardable = {}
+
+	for _, match_range in pairs(matches) do
+		next_chars = match_range[#match_range]
+		if #next_chars > 0 and not discardable[next_chars] then
+			discardable[next_chars] = true
+		end
+	end
+
+	if next(discardable) == nil then
+		return labels
+	end
+
+	discardable = vim.tbl_keys(discardable)
+	table.sort(discardable)
+	local discardable_rx = "[" .. vim.pesc(table.concat(discardable)) .. "]"
+	local filtered_labels = {}
+
+	for _, label in ipairs(labels) do
+		if vim.fn.match(label, "\\C" .. discardable_rx) == -1 then
+			table.insert(filtered_labels, label)
+		end
+	end
+
+	return filtered_labels
+end
+
 function M.create_labels_map(labels, matches, reverse)
 	local label
 	local labels_map = {}
@@ -243,7 +278,7 @@ function M.win_find_pattern(win_id, pattern, opts)
 	local forward = opts.forward == true
 	local relative = opts.relative == true
 
-	local match_lnum, match_col, match_end_col
+	local match_lnum, match_col, match_end_col, match_next_chars
 	local prev_matches, next_matches = {}, {}
 
 	for i, line in ipairs(lines) do
@@ -253,7 +288,8 @@ function M.win_find_pattern(win_id, pattern, opts)
 		if ok then
 			for _, match_range in ipairs(ranges) do
 				match_lnum, match_col, match_end_col = first_line - 1 + i, unpack(match_range)
-				match_range = { match_lnum - 1, match_col, match_end_col }
+				match_next_chars = line:sub(match_end_col + 1, match_end_col + 1)
+				match_range = { match_lnum - 1, match_col, match_end_col, match_next_chars }
 
 				--- prev matches
 				if match_lnum < cursor_lnum then
@@ -292,9 +328,11 @@ end
 
 function M.get_user_input()
 	local keynum, ok, char
+	local separator = cache.options.separator
 	local user_input = ""
 	local pattern, label, last_matching_pattern = "", "", ""
-	local matches, labels_map = {}, {}
+	local matches, labels_map, prev_labels_map = {}, {}, {}
+	local labels = cache.options.labels
 	local need_looping = true
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
@@ -330,8 +368,12 @@ function M.get_user_input()
 	end
 
 	if need_looping == true then
-		labels_map = M.create_labels_map(cache.options.labels, matches, false)
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, cache.options.labels[labels_slider.pos])
+		if separator == "" then
+			labels = M.discard_labels(cache.options.labels, matches)
+		end
+		labels_map = M.create_labels_map(labels, matches, false)
+		prev_labels_map = labels_map
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
 	end
 
 	while need_looping == true do
@@ -365,7 +407,7 @@ function M.get_user_input()
 				send_to_qflist(matches)
 				break
 			elseif cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
-				user_input = user_input .. cache.options.separator .. char
+				user_input = user_input .. separator .. char
 			else
 				user_input = user_input .. char
 			end
@@ -373,19 +415,29 @@ function M.get_user_input()
 
 		--- matches
 
-		pattern, label = extract_pattern_and_label(user_input, cache.options.separator)
+		pattern, label = extract_pattern_and_label(user_input, separator)
 		matches = M.win_find_pattern(win_id, pattern, search_opts)
-		labels_map = M.create_labels_map(cache.options.labels, matches, false)
+		if separator == "" then
+			labels = M.discard_labels(cache.options.labels, matches)
+		end
+		labels_map = M.create_labels_map(labels, matches, false)
 		labels_slider.set_max(#matches)
 
 		if cache.options.search_scope == "buffer" then
 			M.jump_to(matches[labels_slider.pos])
 		end
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, cache.options.labels[labels_slider.pos])
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
 
 		if #matches > 0 then
 			last_matching_pattern = pattern
 		end
+
+		local last_char = user_input:sub(#user_input, #user_input)
+		if separator == "" and #matches == 0 and vim.tbl_contains(labels, last_char) then
+			pattern, label = user_input:sub(1, #user_input - 1), last_char
+			labels_map = prev_labels_map
+		end
+		prev_labels_map = labels_map
 
 		if #pattern > 0 and #label > 0 then
 			break
@@ -407,13 +459,18 @@ function M.get_user_input()
 		update_search_register(cache.state.last_used_pattern, cache.options.pattern_type)
 	end
 
+	if separator == "" and #label > 0 then
+		M.jump_to(labels_map[label])
+		return
+	end
+
 	if char == keymaps.cancel then
 		M.jump_to({ cursor_pos[1] - 1, cursor_pos[2] + 1 })
 		return
 	end
 
 	if char == keymaps.validate or keynum == keymaps.validate then
-		M.jump_to(labels_map[cache.options.labels[labels_slider.pos]])
+		M.jump_to(labels_map[labels[labels_slider.pos]])
 		return
 	end
 
