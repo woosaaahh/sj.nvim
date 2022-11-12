@@ -72,8 +72,10 @@ previous/next match or `sj.redo()` to redo a search using the last pattern.
 
 - When there are no matches, the pattern in the cmdline will have a different color ;
 - When you use `max_pattern_length` and you reach that length limit, the labels color will
-  change to indicate that the next key should be for a label and not for the pattern.
+  change to indicate that the next key should be for a label and not for the pattern ;
   (When reaching this limit, no need to type `:` before the label)
+- You can use an empty separator `separator = ""` which will avoid the need to type an
+  extra character but will reduce the number of available labels.
 
 ### Configuration
 
@@ -90,7 +92,8 @@ local config = {
   prompt_prefix = "", -- if set, the string will be used as a prefix in the command line
   relative_labels = false, -- if true, labels are ordered from the cursor position, not from the top of the buffer
   search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
-  separator = ":", -- character used to split the user input in <pattern> and <label>
+  select_window = false, -- if true, ask for a window to jump to before starting the search
+  separator = ":", -- character used to split the user input in <pattern> and <label> (can be empty)
   update_search_register = false, -- if true, update the search register with the last used pattern
   use_last_pattern = false, -- if true, reuse the last pattern for next calls
   use_overlay = true, -- if true, apply an overlay to better identify labels and matches
@@ -155,6 +158,14 @@ sj.setup({
 })
 
 --- Keymaps ------------------------------------------------------------------------------
+
+vim.keymap.set("n", "!", function()
+	sj.run({ select_window = true })
+end)
+
+vim.keymap.set("n", "<A-!>", function()
+	sj.select_window()
+end)
 
 --- visible lines -------------------------------------
 
