@@ -200,7 +200,7 @@ function M.discard_labels(labels, matches)
 	end
 
 	local next_chars
-	local discardable= {}
+	local discardable = {}
 
 	for _, match_range in pairs(matches) do
 		next_chars = match_range[#match_range]
@@ -230,8 +230,6 @@ end
 function M.create_labels_map(labels, matches, reverse)
 	local label
 	local labels_map = {}
-
-	labels = M.discard_labels(labels, matches)
 
 	for match_num, _ in pairs(matches) do
 		label = labels[match_num]
@@ -331,6 +329,7 @@ function M.get_user_input()
 	local user_input = ""
 	local pattern, label, last_matching_pattern = "", "", ""
 	local matches, labels_map = {}, {}
+	local labels = cache.options.labels
 	local need_looping = true
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
@@ -366,8 +365,9 @@ function M.get_user_input()
 	end
 
 	if need_looping == true then
-		labels_map = M.create_labels_map(cache.options.labels, matches, false)
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, cache.options.labels[labels_slider.pos])
+		labels = M.discard_labels(cache.options.labels, matches)
+		labels_map = M.create_labels_map(labels, matches, false)
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
 	end
 
 	while need_looping == true do
@@ -411,13 +411,14 @@ function M.get_user_input()
 
 		pattern, label = extract_pattern_and_label(user_input, cache.options.separator)
 		matches = M.win_find_pattern(win_id, pattern, search_opts)
-		labels_map = M.create_labels_map(cache.options.labels, matches, false)
+		labels = M.discard_labels(cache.options.labels, matches)
+		labels_map = M.create_labels_map(labels, matches, false)
 		labels_slider.set_max(#matches)
 
 		if cache.options.search_scope == "buffer" then
 			M.jump_to(matches[labels_slider.pos])
 		end
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, cache.options.labels[labels_slider.pos])
+		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
 
 		if #matches > 0 then
 			last_matching_pattern = pattern
@@ -449,7 +450,7 @@ function M.get_user_input()
 	end
 
 	if char == keymaps.validate or keynum == keymaps.validate then
-		M.jump_to(labels_map[cache.options.labels[labels_slider.pos]])
+		M.jump_to(labels_map[labels[labels_slider.pos]])
 		return
 	end
 
