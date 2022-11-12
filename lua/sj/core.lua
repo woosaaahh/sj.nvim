@@ -271,6 +271,7 @@ function M.win_find_pattern(win_id, pattern, opts)
 	local first_line, last_line = M.win_get_lines_range(win_id, opts.scope)
 	local lines = vim.api.nvim_buf_get_lines(buf_nr, first_line - 1, last_line, false)
 
+	pattern = (opts.pattern_type:find("vim") and pattern:find("%u")) and "\\C"..pattern or pattern
 	local search = get_search_function(opts.pattern_type)
 
 	local cursor_lnum, cursor_col = opts.cursor_pos[1], opts.cursor_pos[2] + 1
