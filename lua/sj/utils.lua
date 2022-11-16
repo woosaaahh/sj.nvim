@@ -145,4 +145,26 @@ function M.slider(max, wrap)
 	})
 end
 
+function M.win_view(win_id)
+	local data = {}
+	local view = {}
+
+	function view.save()
+		if vim.api.nvim_win_is_valid(win_id) then
+			data = vim.api.nvim_win_call(win_id, vim.fn.winsaveview)
+		end
+	end
+
+	function view.restore()
+		if vim.api.nvim_win_is_valid(win_id) then
+			vim.api.nvim_win_call(win_id, function()
+				vim.fn.winrestview(data)
+			end)
+		end
+	end
+
+	view.save()
+	return view
+end
+
 return M

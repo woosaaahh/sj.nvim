@@ -342,6 +342,7 @@ function M.get_user_input()
 	local win_id = vim.api.nvim_get_current_win()
 	local buf_nr = vim.api.nvim_win_get_buf(win_id)
 	local cursor_pos = vim.api.nvim_win_get_cursor(win_id)
+	local view = utils.win_view(win_id)
 
 	local search_opts = {
 		cursor_pos = cursor_pos, -- needed here to avoid "sliding matches" while typing the pattern
@@ -462,13 +463,13 @@ function M.get_user_input()
 		update_search_register(cache.state.last_used_pattern, cache.options.pattern_type)
 	end
 
-	if separator == "" and #label > 0 then
+	if separator == "" and #label > 0 and labels_map[label] then
 		M.jump_to(labels_map[label])
 		return
 	end
 
-	if char == keymaps.cancel then
-		M.jump_to({ cursor_pos[1] - 1, cursor_pos[2] + 1 })
+	if char == keymaps.cancel or not labels_map[label] then
+		view.restore()
 		return
 	end
 
