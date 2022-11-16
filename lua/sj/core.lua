@@ -468,13 +468,13 @@ function M.get_user_input()
 		return
 	end
 
-	if char == keymaps.cancel or not labels_map[label] then
-		view.restore()
+	if char == keymaps.validate or keynum == keymaps.validate then
+		M.jump_to(labels_map[labels[labels_slider.pos]])
 		return
 	end
 
-	if char == keymaps.validate or keynum == keymaps.validate then
-		M.jump_to(labels_map[labels[labels_slider.pos]])
+	if char == keymaps.cancel or not labels_map[label] then
+		view.restore()
 		return
 	end
 
