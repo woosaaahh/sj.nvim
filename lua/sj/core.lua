@@ -448,6 +448,7 @@ function M.get_user_input()
 		end
 
 		if cache.options.auto_jump and #matches == 1 then
+			label = labels[1]
 			break
 		end
 
