@@ -33,7 +33,7 @@ function M.run(opts)
 		end
 	end
 
-	local user_input, labels_map = core.get_user_input()
+	local user_input, labels_map = core.get_user_input(opts.user_prefix)
 	core.extract_range_and_jump_to(user_input, labels_map)
 end
 

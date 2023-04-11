@@ -329,14 +329,15 @@ function M.win_find_pattern(win_id, pattern, opts)
 	return matches
 end
 
-function M.get_user_input()
+function M.get_user_input(user_prefix)
 	local keynum, ok, char
 	local separator = cache.options.separator
-	local user_input = ""
+	local user_input = user_prefix or ""
 	local pattern, label, last_matching_pattern = "", "", ""
 	local matches, labels_map, prev_labels_map = {}, {}, {}
 	local labels = cache.options.labels
 	local need_looping = true
+	local loop_count = 0
 	local delete_prev_word_rx = [=[\v[[:keyword:]]\zs[^[:keyword:]]+$|[[:keyword:]]+$]=]
 
 	local win_id = vim.api.nvim_get_current_win()
@@ -383,37 +384,39 @@ function M.get_user_input()
 	while need_looping == true do
 		--- user input
 
-		ok, keynum = pcall(vim.fn.getchar)
-		if ok then
-			char = type(keynum) == "number" and vim.fn.nr2char(keynum) or ""
-			if char == keymaps.cancel or keynum == keymaps.cancel then
-				user_input, labels_map = "", {}
-				break
-			elseif char == keymaps.validate or keynum == keymaps.validate then
-				break
-			elseif char == keymaps.delete_prev_char or keynum == keymaps.delete_prev_char then
-				user_input = #user_input > 0 and user_input:sub(1, #user_input - 1) or user_input
-			elseif char == keymaps.delete_prev_word or keynum == keymaps.delete_prev_word then
-				user_input = vim.fn.substitute(user_input, delete_prev_word_rx, "", "")
-			elseif char == keymaps.restore_pattern or keynum == keymaps.restore_pattern then
-				user_input = last_matching_pattern
-			elseif char == keymaps.delete_pattern or keynum == keymaps.delete_pattern then
-				user_input = ""
-			elseif char == keymaps.prev_pattern or keynum == keymaps.prev_pattern then
-				user_input = patterns[patterns_slider.prev()]
-			elseif char == keymaps.next_pattern or keynum == keymaps.next_pattern then
-				user_input = patterns[patterns_slider.next()]
-			elseif char == keymaps.prev_match or keynum == keymaps.prev_match then
-				cache.state.label_index = labels_slider.prev()
-			elseif char == keymaps.next_match or keynum == keymaps.next_match then
-				cache.state.label_index = labels_slider.next()
-			elseif char == keymaps.send_to_qflist or keynum == keymaps.send_to_qflist then
-				send_to_qflist(matches)
-				break
-			elseif cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
-				user_input = user_input .. separator .. char
-			else
-				user_input = user_input .. char
+		if not (loop_count == 0 and user_input ~= "") then
+			ok, keynum = pcall(vim.fn.getchar)
+			if ok then
+				char = type(keynum) == "number" and vim.fn.nr2char(keynum) or ""
+				if char == keymaps.cancel or keynum == keymaps.cancel then
+					user_input, labels_map = "", {}
+					break
+				elseif char == keymaps.validate or keynum == keymaps.validate then
+					break
+				elseif char == keymaps.delete_prev_char or keynum == keymaps.delete_prev_char then
+					user_input = #user_input > 0 and user_input:sub(1, #user_input - 1) or user_input
+				elseif char == keymaps.delete_prev_word or keynum == keymaps.delete_prev_word then
+					user_input = vim.fn.substitute(user_input, delete_prev_word_rx, "", "")
+				elseif char == keymaps.restore_pattern or keynum == keymaps.restore_pattern then
+					user_input = last_matching_pattern
+				elseif char == keymaps.delete_pattern or keynum == keymaps.delete_pattern then
+					user_input = ""
+				elseif char == keymaps.prev_pattern or keynum == keymaps.prev_pattern then
+					user_input = patterns[patterns_slider.prev()]
+				elseif char == keymaps.next_pattern or keynum == keymaps.next_pattern then
+					user_input = patterns[patterns_slider.next()]
+				elseif char == keymaps.prev_match or keynum == keymaps.prev_match then
+					cache.state.label_index = labels_slider.prev()
+				elseif char == keymaps.next_match or keynum == keymaps.next_match then
+					cache.state.label_index = labels_slider.next()
+				elseif char == keymaps.send_to_qflist or keynum == keymaps.send_to_qflist then
+					send_to_qflist(matches)
+					break
+				elseif cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
+					user_input = user_input .. separator .. char
+				else
+					user_input = user_input .. char
+				end
 			end
 		end
 
@@ -453,6 +456,8 @@ function M.get_user_input()
 		end
 
 		---
+
+		loop_count = loop_count + 1
 	end
 	ui.clear_feedbacks(buf_nr)
 
