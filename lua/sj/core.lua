@@ -359,12 +359,18 @@ function M.get_user_input()
 
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
 		user_input = cache.state.last_used_pattern
-		pattern = cache.state.last_used_pattern
+	elseif #cache.options.pattern > 0 then
+		user_input = cache.options.pattern
+	end
+
+	if #user_input > 0 then
+		pattern = user_input
 		matches = M.win_find_pattern(win_id, user_input, search_opts)
 		labels_slider.set_max(#matches)
-		if cache.options.search_scope == "buffer" then
-			M.jump_to(matches[1])
-		end
+	end
+
+	if cache.options.search_scope == "buffer" and #matches > 0 then
+		M.jump_to(matches[1])
 	end
 
 	if cache.options.auto_jump and #matches == 1 then

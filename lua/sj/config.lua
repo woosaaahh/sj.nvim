@@ -64,6 +64,7 @@ local checks = {
 	keymaps = { func = valid_keymaps, message = "must be a table with string as values" },
 	labels = { func = valid_labels, message = "must be a list of characters" },
 	max_pattern_length = { func = is_unsigned_number, message = "must be an unsigned number" },
+	pattern = { func = is_string, message = "must be a string" },
 	pattern_type = { func = is_string, message = "must be a string" },
 	preserve_highlights = { func = is_boolean, message = "must be a boolean" },
 	prompt_prefix = { func = is_string, message = "must be a string" },
@@ -97,6 +98,7 @@ local M = {
 		forward_search = true, -- if true, the search will be done from top to bottom
 		highlights_timeout = 0, -- if > 0, wait for 'updatetime' + N ms to clear hightlights (sj.prev_match/sj.next_match)
 		max_pattern_length = 0, -- if > 0, wait for a label after N characters
+		pattern = "", -- predefined pattern to use at the start of a search
 		pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 		preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
 		prompt_prefix = "", -- if set, the string will be used as a prefix in the command line
