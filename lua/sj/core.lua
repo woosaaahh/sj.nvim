@@ -216,32 +216,15 @@ function M.discard_labels(labels, matches)
 		return labels
 	end
 
-	local next_chars
+	-- match_range[#match_range]: next character following a match
 	local discardable = {}
-
 	for _, match_range in pairs(matches) do
-		next_chars = match_range[#match_range]
-		if #next_chars > 0 and not discardable[next_chars] then
-			discardable[next_chars] = true
-		end
+		discardable[match_range[#match_range]] = true
 	end
 
-	if next(discardable) == nil then
-		return labels
-	end
-
-	discardable = vim.tbl_keys(discardable)
-	table.sort(discardable)
-	local discardable_rx = "[" .. vim.pesc(table.concat(discardable)) .. "]"
-	local filtered_labels = {}
-
-	for _, label in ipairs(labels) do
-		if vim.fn.match(label, "\\C" .. discardable_rx) == -1 then
-			table.insert(filtered_labels, label)
-		end
-	end
-
-	return filtered_labels
+	return vim.tbl_filter(function(label)
+		return discardable[label] ~= true
+	end, labels)
 end
 
 function M.create_labels_map(labels, matches, reverse)
