@@ -86,6 +86,7 @@ local config = {
   auto_jump = false, -- if true, automatically jump on the sole match
   forward_search = true, -- if true, the search will be done from top to bottom
   highlights_timeout = 0, -- if > 0, wait for 'updatetime' + N ms to clear hightlights (sj.prev_match/sj.next_match)
+  inclusive = false, -- if true, the jump target will be included with 'operator-pending' keymaps
   max_pattern_length = 0, -- if > 0, wait for a label after N characters
   pattern = "", -- predefined pattern to use at the start of a search
   pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
@@ -218,6 +219,54 @@ vim.keymap.set({ "n", "o", "x" }, "<localleader>l", function()
     search_scope = "current_line",
     use_overlay = false,
   })
+end)
+
+vim.keymap.set("o", "f", function()
+	sj.run({
+		auto_jump = true,
+		forward_search = true,
+		inclusive = true,
+		max_pattern_length = 1,
+		pattern_type = "lua_plain",
+		search_scope = "current_line", -- works with other scopes
+		use_overlay = false,
+	})
+end)
+
+vim.keymap.set("o", "F", function()
+	sj.run({
+		auto_jump = true,
+		forward_search = false,
+		inclusive = true,
+		max_pattern_length = 1,
+		pattern_type = "lua_plain",
+		search_scope = "current_line", -- works with other scopes
+		use_overlay = false,
+	})
+end)
+
+vim.keymap.set("o", "t", function()
+	sj.run({
+		auto_jump = true,
+		forward_search = true,
+		inclusive = false,
+		max_pattern_length = 1,
+		pattern_type = "lua_plain",
+		search_scope = "current_line", -- works with other scopes
+		use_overlay = false,
+	})
+end)
+
+vim.keymap.set("o", "T", function()
+	sj.run({
+		auto_jump = true,
+		forward_search = false,
+		inclusive = false,
+		max_pattern_length = 1,
+		pattern_type = "lua_plain",
+		search_scope = "current_line", -- works with other scopes
+		use_overlay = false,
+	})
 end)
 
 --- prev/next match -----------------------------------

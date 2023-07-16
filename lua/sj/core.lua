@@ -160,10 +160,25 @@ function M.jump_to(range)
 		return
 	end
 
-	local lnum, col = unpack(range)
-	if type(lnum) == "number" and type(col) == "number" then
-		vim.api.nvim_win_set_cursor(0, { lnum + 1, col - 1 })
+	local new_lnum, new_col = unpack(range)
+	if type(new_lnum) ~= "number" or type(new_col) ~= "number" then
+		return
 	end
+	new_lnum, new_col = new_lnum + 1, new_col - 1
+
+	local cur_lnum, cur_col = unpack(vim.api.nvim_win_get_cursor(0))
+	local jump_forward = cur_lnum < new_lnum or (cur_lnum == new_lnum and cur_col < new_col)
+
+	if vim.fn.mode(1):find("no") ~= nil then
+		if jump_forward == false and cache.options.inclusive ~= true then -- T
+			new_col = new_col + 1
+		elseif jump_forward == true and cache.options.inclusive == true then -- f
+			-- new_col++ wouldn't delete the last character of the line
+			vim.cmd("normal! v")
+		end
+	end
+
+	vim.api.nvim_win_set_cursor(0, { new_lnum, new_col })
 end
 
 function M.extract_range_and_jump_to(user_input, labels_map)

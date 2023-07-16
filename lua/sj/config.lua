@@ -61,6 +61,7 @@ local checks = {
 	forward_search = { func = is_boolean, message = "must be a boolean" },
 	highlights = { func = valid_highlights, message = "must be a table with tables as values" },
 	highlights_timeout = { func = is_unsigned_number, message = "must be an unsigned number" },
+	inclusive = { func = is_boolean, message = "must be a boolean" },
 	keymaps = { func = valid_keymaps, message = "must be a table with string as values" },
 	labels = { func = valid_labels, message = "must be a list of characters" },
 	max_pattern_length = { func = is_unsigned_number, message = "must be an unsigned number" },
@@ -97,6 +98,7 @@ local M = {
 		auto_jump = false, -- if true, automatically jump on the sole match
 		forward_search = true, -- if true, the search will be done from top to bottom
 		highlights_timeout = 0, -- if > 0, wait for 'updatetime' + N ms to clear hightlights (sj.prev_match/sj.next_match)
+		inclusive = false, -- if true, the jump target will be included with 'operator-pending' keymaps
 		max_pattern_length = 0, -- if > 0, wait for a label after N characters
 		pattern = "", -- predefined pattern to use at the start of a search
 		pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
