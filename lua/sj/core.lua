@@ -169,12 +169,22 @@ function M.jump_to(range)
 	local cur_lnum, cur_col = unpack(vim.api.nvim_win_get_cursor(0))
 	local jump_forward = cur_lnum < new_lnum or (cur_lnum == new_lnum and cur_col < new_col)
 
-	if vim.fn.mode(1):find("no") ~= nil then
-		if jump_forward == false and cache.options.inclusive ~= true then -- T
+	local mode = vim.fn.mode(1)
+	local inclusive = cache.options.inclusive == true
+	local line_scope = cache.options.search_scope == "current_line"
+
+	if mode and mode:find("no") ~= nil then
+		if not jump_forward and not inclusive then -- T
 			new_col = new_col + 1
-		elseif jump_forward == true and cache.options.inclusive == true then -- f
+		elseif jump_forward and inclusive then -- f
 			-- new_col++ wouldn't delete the last character of the line
 			vim.cmd("normal! v")
+		end
+	elseif mode and mode:match("[vV\22]") or (mode == "n" and line_scope) then
+		if not jump_forward and not inclusive then -- T
+			new_col = new_col + 1
+		elseif jump_forward and not inclusive then -- t
+			new_col = new_col - 1
 		end
 	end
 
