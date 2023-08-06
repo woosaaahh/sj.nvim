@@ -37,7 +37,7 @@ local function replace_highlights(new_highlights)
 	local old_hl_conf, new_hl_conf
 
 	for hl_group in pairs(hl_group_links) do
-		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
+		old_hl_conf = vim.api.nvim_get_hl(namespace, { name = hl_group, link = true })
 		new_hl_conf = new_highlights[hl_group] or old_hl_conf
 		vim.api.nvim_set_hl(0, hl_group, new_hl_conf)
 	end
@@ -204,8 +204,9 @@ end
 
 function M.cancel_highlights_timer()
 	if clear_timer ~= nil then
-		pcall(vim.loop.timer_stop, clear_timer)
-		pcall(vim.loop.timer_close, clear_timer)
+		pcall(function()
+			clear_timer:close()
+		end)
 	end
 end
 

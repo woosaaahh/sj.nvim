@@ -24,7 +24,7 @@ Search based navigation combined with quick jump features.
 
 ### Requirements
 
-Only [Neovim 0.8+](https://github.com/neovim/neovim/releases) is required, nothing more.
+Only [Neovim 0.9+](https://github.com/neovim/neovim/releases) is required, nothing more.
 
 ### Usage
 
