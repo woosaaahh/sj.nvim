@@ -160,10 +160,35 @@ function M.jump_to(range)
 		return
 	end
 
-	local lnum, col = unpack(range)
-	if type(lnum) == "number" and type(col) == "number" then
-		vim.api.nvim_win_set_cursor(0, { lnum + 1, col - 1 })
+	local new_lnum, new_col = unpack(range)
+	if type(new_lnum) ~= "number" or type(new_col) ~= "number" then
+		return
 	end
+	new_lnum, new_col = new_lnum + 1, new_col - 1
+
+	local cur_lnum, cur_col = unpack(vim.api.nvim_win_get_cursor(0))
+	local jump_forward = cur_lnum < new_lnum or (cur_lnum == new_lnum and cur_col < new_col)
+
+	local mode = vim.fn.mode(1)
+	local inclusive = cache.options.inclusive == true
+	local line_scope = cache.options.search_scope == "current_line"
+
+	if mode and mode:find("no") ~= nil then
+		if not jump_forward and not inclusive then -- T
+			new_col = new_col + 1
+		elseif jump_forward and inclusive then -- f
+			-- new_col++ wouldn't delete the last character of the line
+			vim.cmd("normal! v")
+		end
+	elseif mode and mode:match("[vV\22]") or (mode == "n" and line_scope) then
+		if not jump_forward and not inclusive then -- T
+			new_col = new_col + 1
+		elseif jump_forward and not inclusive then -- t
+			new_col = new_col - 1
+		end
+	end
+
+	vim.api.nvim_win_set_cursor(0, { new_lnum, new_col })
 end
 
 function M.extract_range_and_jump_to(user_input, labels_map)
@@ -201,32 +226,15 @@ function M.discard_labels(labels, matches)
 		return labels
 	end
 
-	local next_chars
+	-- match_range[#match_range]: next character following a match
 	local discardable = {}
-
 	for _, match_range in pairs(matches) do
-		next_chars = match_range[#match_range]
-		if #next_chars > 0 and not discardable[next_chars] then
-			discardable[next_chars] = true
-		end
+		discardable[match_range[#match_range]] = true
 	end
 
-	if next(discardable) == nil then
-		return labels
-	end
-
-	discardable = vim.tbl_keys(discardable)
-	table.sort(discardable)
-	local discardable_rx = "[" .. vim.pesc(table.concat(discardable)) .. "]"
-	local filtered_labels = {}
-
-	for _, label in ipairs(labels) do
-		if vim.fn.match(label, "\\C" .. discardable_rx) == -1 then
-			table.insert(filtered_labels, label)
-		end
-	end
-
-	return filtered_labels
+	return vim.tbl_filter(function(label)
+		return discardable[label] ~= true
+	end, labels)
 end
 
 function M.create_labels_map(labels, matches, reverse)
@@ -281,7 +289,7 @@ function M.win_find_pattern(win_id, pattern, opts)
 	local forward = opts.forward == true
 	local relative = opts.relative == true
 
-	local match_lnum, match_col, match_end_col, match_next_chars
+	local match_lnum, match_col, match_end_col, match_text, match_next_chars
 	local prev_matches, next_matches = {}, {}
 
 	for i, line in ipairs(lines) do
@@ -291,8 +299,9 @@ function M.win_find_pattern(win_id, pattern, opts)
 		if ok then
 			for _, match_range in ipairs(ranges) do
 				match_lnum, match_col, match_end_col = first_line - 1 + i, unpack(match_range)
+				match_text = line:sub(match_col, match_end_col)
 				match_next_chars = line:sub(match_end_col + 1, match_end_col + 1)
-				match_range = { match_lnum - 1, match_col, match_end_col, match_next_chars }
+				match_range = { match_lnum - 1, match_col, match_text, match_next_chars }
 
 				--- prev matches
 				if match_lnum < cursor_lnum then
@@ -359,12 +368,18 @@ function M.get_user_input()
 
 	if cache.options.use_last_pattern == true and type(cache.state.last_used_pattern) == "string" then
 		user_input = cache.state.last_used_pattern
-		pattern = cache.state.last_used_pattern
+	elseif #cache.options.pattern > 0 then
+		user_input = cache.options.pattern
+	end
+
+	if #user_input > 0 then
+		pattern = user_input
 		matches = M.win_find_pattern(win_id, user_input, search_opts)
 		labels_slider.set_max(#matches)
-		if cache.options.search_scope == "buffer" then
-			M.jump_to(matches[1])
-		end
+	end
+
+	if cache.options.search_scope == "buffer" and #matches > 0 then
+		M.jump_to(matches[1])
 	end
 
 	if cache.options.auto_jump and #matches == 1 then
@@ -421,20 +436,12 @@ function M.get_user_input()
 
 		pattern, label = extract_pattern_and_label(user_input, separator)
 		matches = M.win_find_pattern(win_id, pattern, search_opts)
+
 		if separator == "" then
 			labels = M.discard_labels(cache.options.labels, matches)
 		end
 		labels_map = M.create_labels_map(labels, matches, false)
 		labels_slider.set_max(#matches)
-
-		if cache.options.search_scope == "buffer" then
-			M.jump_to(matches[labels_slider.pos])
-		end
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
-
-		if #matches > 0 then
-			last_matching_pattern = pattern
-		end
 
 		local last_char = user_input:sub(#user_input, #user_input)
 		if separator == "" and #matches == 0 and vim.tbl_contains(labels, last_char) then
@@ -444,12 +451,34 @@ function M.get_user_input()
 		prev_labels_map = labels_map
 
 		if #pattern > 0 and #label > 0 then
+			local valid_label = vim.tbl_contains(vim.tbl_keys(labels_map), label)
+			if valid_label or cache.options.stop_on_fail == true then
+				break
+			end
+			matches = {}
+		end
+
+		if #matches == 0 then
+			if cache.options.stop_on_fail == true then
+				break
+			end
+			pattern = last_matching_pattern
+			labels_map = {}
+			prev_labels_map = {}
+			ui.show_feedbacks(buf_nr, user_input, {}, {}, {})
+		end
+
+		if #matches == 1 and cache.options.auto_jump then
+			label = labels[1]
 			break
 		end
 
-		if cache.options.auto_jump and #matches == 1 then
-			label = labels[1]
-			break
+		if #matches > 0 then
+			last_matching_pattern = pattern
+			if cache.options.search_scope == "buffer" then
+				M.jump_to(matches[labels_slider.pos])
+			end
+			ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
 		end
 
 		---

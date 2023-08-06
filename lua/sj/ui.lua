@@ -37,7 +37,7 @@ local function replace_highlights(new_highlights)
 	local old_hl_conf, new_hl_conf
 
 	for hl_group in pairs(hl_group_links) do
-		old_hl_conf = vim.api.nvim_get_hl_by_name(hl_group, true)
+		old_hl_conf = vim.api.nvim_get_hl(namespace, { name = hl_group, link = true })
 		new_hl_conf = new_highlights[hl_group] or old_hl_conf
 		vim.api.nvim_set_hl(0, hl_group, new_hl_conf)
 	end
@@ -56,9 +56,23 @@ local function apply_overlay(buf_nr, redraw)
 	end
 	buf_nr = valid_buf_nr(buf_nr) and buf_nr or 0
 
-	for lnum = 0, vim.fn.line("$") - 1 do
-		vim.api.nvim_buf_add_highlight(buf_nr, namespace, "SjOverlay", lnum, 0, -1)
+	local first_line, last_line = 0, vim.fn.line("$")
+	if cache.options.search_scope == "current_line" then
+		last_line = last_line - 1
 	end
+
+	if cache.options.search_scope == "current_line" then
+		local win_id = vim.api.nvim_get_current_win()
+		first_line, last_line = unpack(vim.api.nvim_win_get_cursor(win_id))
+		first_line, last_line = first_line - 1, first_line - 0
+	end
+
+	vim.api.nvim_buf_set_extmark(buf_nr, namespace, first_line, 0, {
+		end_row = last_line,
+		hl_group = "SjOverlay",
+		priority = 1000 + buf_nr,
+		virt_text_pos = "overlay",
+	})
 
 	if redraw ~= false then
 		vim.cmd.redraw()
@@ -142,7 +156,7 @@ end
 function M.highlight_matches(buf_nr, labels_map, pattern, show_labels, focused_label)
 	buf_nr = valid_buf_nr(buf_nr) and buf_nr or 0
 
-	local lnum, start_idx, end_idx, label_pos
+	local lnum, start_idx, match_text, label_pos
 
 	local label_highlight = "SjLabel"
 	if cache.options.max_pattern_length > 0 and #pattern >= cache.options.max_pattern_length then
@@ -153,13 +167,18 @@ function M.highlight_matches(buf_nr, labels_map, pattern, show_labels, focused_l
 	apply_overlay(buf_nr, false) -- redrawing here would cause flickering
 
 	for label, match_range in pairs(labels_map) do
-		lnum, start_idx, end_idx = unpack(match_range)
+		lnum, start_idx, match_text = unpack(match_range)
 		label_pos = math.max(start_idx - 1, 0)
 
-		vim.api.nvim_buf_add_highlight(buf_nr, namespace, "SjMatches", lnum, start_idx - 1, end_idx)
+		vim.api.nvim_buf_set_extmark(buf_nr, namespace, lnum, start_idx - 1, {
+			priority = 1100 + buf_nr,
+			virt_text = { { match_text, "SjMatches" } },
+			virt_text_pos = "overlay",
+		})
 
 		if show_labels ~= false then
 			vim.api.nvim_buf_set_extmark(buf_nr, namespace, lnum, label_pos, {
+				priority = 1200 + buf_nr,
 				virt_text = { { label, label == focused_label and "SjFocusedLabel" or label_highlight } },
 				virt_text_pos = "overlay",
 			})
@@ -185,8 +204,9 @@ end
 
 function M.cancel_highlights_timer()
 	if clear_timer ~= nil then
-		pcall(vim.loop.timer_stop, clear_timer)
-		pcall(vim.loop.timer_close, clear_timer)
+		pcall(function()
+			clear_timer:close()
+		end)
 	end
 end
 

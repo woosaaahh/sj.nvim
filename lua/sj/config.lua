@@ -61,9 +61,11 @@ local checks = {
 	forward_search = { func = is_boolean, message = "must be a boolean" },
 	highlights = { func = valid_highlights, message = "must be a table with tables as values" },
 	highlights_timeout = { func = is_unsigned_number, message = "must be an unsigned number" },
+	inclusive = { func = is_boolean, message = "must be a boolean" },
 	keymaps = { func = valid_keymaps, message = "must be a table with string as values" },
 	labels = { func = valid_labels, message = "must be a list of characters" },
 	max_pattern_length = { func = is_unsigned_number, message = "must be an unsigned number" },
+	pattern = { func = is_string, message = "must be a string" },
 	pattern_type = { func = is_string, message = "must be a string" },
 	preserve_highlights = { func = is_boolean, message = "must be a boolean" },
 	prompt_prefix = { func = is_string, message = "must be a string" },
@@ -71,6 +73,7 @@ local checks = {
 	search_scope = { func = is_string, message = "must be a string" },
 	select_window = { func = is_boolean, message = "must be a boolean" },
 	separator = { func = is_string, message = "must be a string" },
+	stop_on_fail = { func = is_boolean, message = "must be a boolean" },
 	update_search_register = { func = is_boolean, message = "must be a boolean" },
 	use_overlay = { func = is_boolean, message = "must be a boolean" },
 	use_last_pattern = { func = is_boolean, message = "must be a boolean" },
@@ -96,7 +99,9 @@ local M = {
 		auto_jump = false, -- if true, automatically jump on the sole match
 		forward_search = true, -- if true, the search will be done from top to bottom
 		highlights_timeout = 0, -- if > 0, wait for 'updatetime' + N ms to clear hightlights (sj.prev_match/sj.next_match)
+		inclusive = true, -- if true, the jump target will be included with 'operator-pending' and 'visual' modes
 		max_pattern_length = 0, -- if > 0, wait for a label after N characters
+		pattern = "", -- predefined pattern to use at the start of a search
 		pattern_type = "vim", -- how to interpret the pattern (lua_plain, lua, vim, vim_very_magic)
 		preserve_highlights = true, -- if true, create an autocmd to preserve highlights when switching colorscheme
 		prompt_prefix = "", -- if set, the string will be used as a prefix in the command line
@@ -104,6 +109,7 @@ local M = {
 		search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
 		select_window = false, -- if true, ask for a window to jump to before starting the search
 		separator = ":", -- character used to split the user input in <pattern> and <label> (can be empty)
+		stop_on_fail = true, -- if true, the search will stop when a search fails (no matches)
 		update_search_register = false, -- if true, update the search register with the last used pattern
 		use_last_pattern = false, -- if true, reuse the last pattern for next calls
 		use_overlay = true, -- if true, apply an overlay to better identify labels and matches
