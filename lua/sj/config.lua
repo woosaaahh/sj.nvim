@@ -73,6 +73,7 @@ local checks = {
 	search_scope = { func = is_string, message = "must be a string" },
 	select_window = { func = is_boolean, message = "must be a boolean" },
 	separator = { func = is_string, message = "must be a string" },
+	stop_on_fail = { func = is_boolean, message = "must be a boolean" },
 	update_search_register = { func = is_boolean, message = "must be a boolean" },
 	use_overlay = { func = is_boolean, message = "must be a boolean" },
 	use_last_pattern = { func = is_boolean, message = "must be a boolean" },
@@ -108,6 +109,7 @@ local M = {
 		search_scope = "visible_lines", -- (current_line, visible_lines_above, visible_lines_below, visible_lines, buffer)
 		select_window = false, -- if true, ask for a window to jump to before starting the search
 		separator = ":", -- character used to split the user input in <pattern> and <label> (can be empty)
+		stop_on_fail = true, -- if true, the search will stop when a search fails (no matches)
 		update_search_register = false, -- if true, update the search register with the last used pattern
 		use_last_pattern = false, -- if true, reuse the last pattern for next calls
 		use_overlay = true, -- if true, apply an overlay to better identify labels and matches

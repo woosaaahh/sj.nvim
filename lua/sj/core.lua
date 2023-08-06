@@ -426,20 +426,12 @@ function M.get_user_input()
 
 		pattern, label = extract_pattern_and_label(user_input, separator)
 		matches = M.win_find_pattern(win_id, pattern, search_opts)
+
 		if separator == "" then
 			labels = M.discard_labels(cache.options.labels, matches)
 		end
 		labels_map = M.create_labels_map(labels, matches, false)
 		labels_slider.set_max(#matches)
-
-		if cache.options.search_scope == "buffer" then
-			M.jump_to(matches[labels_slider.pos])
-		end
-		ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
-
-		if #matches > 0 then
-			last_matching_pattern = pattern
-		end
 
 		local last_char = user_input:sub(#user_input, #user_input)
 		if separator == "" and #matches == 0 and vim.tbl_contains(labels, last_char) then
@@ -449,12 +441,34 @@ function M.get_user_input()
 		prev_labels_map = labels_map
 
 		if #pattern > 0 and #label > 0 then
+			local valid_label = vim.tbl_contains(vim.tbl_keys(labels_map), label)
+			if valid_label or cache.options.stop_on_fail == true then
+				break
+			end
+			matches = {}
+		end
+
+		if #matches == 0 then
+			if cache.options.stop_on_fail == true then
+				break
+			end
+			pattern = last_matching_pattern
+			labels_map = {}
+			prev_labels_map = {}
+			ui.show_feedbacks(buf_nr, user_input, {}, {}, {})
+		end
+
+		if #matches == 1 and cache.options.auto_jump then
+			label = labels[1]
 			break
 		end
 
-		if cache.options.auto_jump and #matches == 1 then
-			label = labels[1]
-			break
+		if #matches > 0 then
+			last_matching_pattern = pattern
+			if cache.options.search_scope == "buffer" then
+				M.jump_to(matches[labels_slider.pos])
+			end
+			ui.show_feedbacks(buf_nr, pattern, matches, labels_map, labels[labels_slider.pos])
 		end
 
 		---
